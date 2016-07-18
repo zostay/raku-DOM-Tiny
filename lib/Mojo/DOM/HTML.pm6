@@ -90,7 +90,11 @@ my %BLOCK = set <
   tbody td template textarea tfoot th thead title tr tt u ul xmp
 >;
 
-our enum MarkupType < Cdata Comment Doctype Pi Root Runaway Tag Text >;
+our enum MarkupType <
+    Cdata Comment Doctype
+    Pi Raw Root
+    Runaway Tag Text
+>;
 
 class TreeMaker {
     has Bool $.xml;
@@ -264,4 +268,49 @@ class TreeMaker {
     method attr-value($/) { make html-unescape ~$<raw-value> }
 }
 
+our sub _render($tree, Bool :$xml!) {
+
+    given $tree[0] {
+        when Text    { html-escape $tree[1] }
+        when Raw     { $tree[1] }
+        when Doctype { '<!DOCTYPE' ~ $tree[1] ~ '>' }
+        when Comment { '<!--' ~ $tree[1] ~ '-->' }
+        when Cdata   { '<![CDATA[' ~ $tree[1] ~ ']]>' }
+        when Pi      { '<?' ~ $tree[1] ~ '?>' }
+        when Root    { [~] $tree[1 .. *].map({ _render($^child, :$xml) }) }
+        when Tag     {
+            # Start tag
+            my $tag    = $tree[1];
+            my $result = "<$tag";
+
+            # Attributes
+            $result ~= [~] gather for $tree[2].sort».kv -> ($key, $value) {
+                with $value {
+                    take qq{ $key="} ~ html-escape($value) ~ '"';
+                }
+                elsif $xml {
+                    take qq{ $key="$key"};
+                }
+                else {
+                    take " $key";
+                }
+            }
+
+            # No children
+            return $xml         ?? "$result />"
+                !! %EMPTY{$tag} ?? "$result>"
+                !!                 "$result></$tag>"
+                    unless $tree[4];
+
+            # Children
+            $result ~= '>' ~ [~] $tree[4 .. *].map({ _render($^child, :$xml) });
+
+            # End tag
+            "$result\</$tag>";
+        }
+        default {
+            die "unknown DOM node type";
+        }
+    }
+}
 

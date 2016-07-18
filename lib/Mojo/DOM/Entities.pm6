@@ -14,14 +14,16 @@ my %ENTITIES = gather for $ENTITY_DATA.lines -> $line {
     }
 }
 
-sub html-escape(Str:D $str) returns Str is export {
+multi html-escape(Str:D $str) returns Str is export {
     $str.trans(
-        [ '&', '<', '>', '"', '\'' ],
+        [ '&', '<', '>', '"', '\'' ] =>
         [ '&amp;', '&lt;', '&gt;', '&quot;', '&#39;' ]
     );
 }
 
-sub html-unescape(Str:D $str) returns Str is export {
+multi html-escape(Any:U) returns Str is export { Str }
+
+multi html-unescape(Str:D $str) returns Str is export {
     $str.subst(/
         '&' [ '#'
                 # decimal entity
@@ -32,6 +34,8 @@ sub html-unescape(Str:D $str) returns Str is export {
             | $<name> = [ \w+ ';'? ] ]
     /, &_decode, :g);
 }
+
+multi html-unescape(Any:U) returns Str is export { Str }
 
 my sub _decode($/) {
 

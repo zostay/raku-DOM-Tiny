@@ -38,9 +38,9 @@ cmp-ok $dom[1][4][5][6][2], '===', $dom[1][4][5], 'right parent';
 is $dom[1][5][0], Mojo::DOM::HTML::Text,  'right type';
 is $dom[1][5][1], 'works', 'right text';
 cmp-ok $dom[1][5][2], '===', $dom[1], 'right parent';
-# is "$dom", <<EOF, 'right result';
-# <foo><bar a="b&lt;c">ju<baz a23>s<bazz></bazz>t</baz></bar>works</foo>
-# EOF
+is Mojo::DOM::HTML::_render($dom, :!xml), q:to/EOF/.trim, 'right result';
+<foo><bar a="b&lt;c">ju<baz a23>s<bazz></bazz>t</baz></bar>works</foo>
+EOF
 
 #say $dom;
 
