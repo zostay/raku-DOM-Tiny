@@ -91,10 +91,10 @@ my %BLOCK = set <
 >;
 
 our enum MarkupType <
-    Cdata Comment Doctype
-    Pi Raw Root
+    CDATA Comment Doctype
+    PI Raw Root
     Runaway Tag Text
->;
+> is export;
 
 class TreeMaker {
     has Bool $.xml;
@@ -197,8 +197,8 @@ class TreeMaker {
                     _node($current, Comment, %markup<comment>);
                 }
 
-                when Pi {
-                    _node($current, Pi, %markup<pi>);
+                when PI {
+                    _node($current, PI, %markup<pi>);
                 }
             }
         }
@@ -238,7 +238,7 @@ class TreeMaker {
 
     method markup:sym<cdata>($/) {
         make {
-            type  => Cdata,
+            type  => CDATA,
             cdata => ~$<cdata>,
         }
     }
@@ -246,7 +246,7 @@ class TreeMaker {
     method markup:sym<pi>($/) {
         $!xml = True if !defined $!xml && (~$<pi>) ~~ /^ xml >>/;
         make {
-            type => Pi,
+            type => PI,
             pi   => ~$<pi>,
         }
     }
@@ -268,6 +268,14 @@ class TreeMaker {
     method attr-value($/) { make html-unescape ~$<raw-value> }
 }
 
+our sub _parse($html, :$xml) {
+    Mojo::DOM.new(
+        tree => Mojo::DOM::HTML::Tokenizer.parse($html,
+            actions => Mojo::DOM::HTML::TreeMaker.new(:$xml),
+        ),
+    );
+}
+
 our sub _render($tree, Bool :$xml!) {
 
     given $tree[0] {
@@ -275,8 +283,8 @@ our sub _render($tree, Bool :$xml!) {
         when Raw     { $tree[1] }
         when Doctype { '<!DOCTYPE' ~ $tree[1] ~ '>' }
         when Comment { '<!--' ~ $tree[1] ~ '-->' }
-        when Cdata   { '<![CDATA[' ~ $tree[1] ~ ']]>' }
-        when Pi      { '<?' ~ $tree[1] ~ '?>' }
+        when CDATA   { '<![CDATA[' ~ $tree[1] ~ ']]>' }
+        when PI      { '<?' ~ $tree[1] ~ '?>' }
         when Root    { [~] $tree[1 .. *].map({ _render($^child, :$xml) }) }
         when Tag     {
             # Start tag
