@@ -1,23 +1,21 @@
-unit class Mojo::DOM does Associative does Positional;
+unit class Mojo::DOM;
 use v6;
 
 use Mojo::DOM::CSS;
 use Mojo::DOM::HTML;
 
-sub EXPORT {
-    {
-        MarkupType => MarkupType,
-        |MarkupType.^enum_value_list.map({ "$_" => $_ }),
+my package EXPORT::DEFAULT {
+    our constant MarkupType = MarkupType;
+    for MarkupType.^enum_value_list -> $type {
+        OUR::{ "$type" } := $type;
     }
 }
 
-has $.tree;
+has $.tree = [ Root ];
 has Bool $.xml;
 
 multi method Bool(Mojo::DOM:U:) returns Bool:D { False }
 multi method Bool(Mojo::DOM:D:) returns Bool:D { True }
-
-multi method Str(Mojo::DOM:D:) returns Str:D { self.Str }
 
 method AT-POS(Mojo::DOM:D: Int:D $i) is rw { self.child-nodes[$i] }
 method list(Mojo::DOM:D:) { self.child-nodes }
@@ -35,8 +33,10 @@ multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
     Mojo::DOM.new(:$tree, :$xml);
 }
 
-multi method parse(Mojo::DOM:D: Str:D $html, Bool :$!xml) returns Mojo::DOM:D {
+multi method parse(Mojo::DOM:D: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
+    $!xml  = $xml with $xml;
     $!tree = Mojo::DOM::HTML::_parse($html, :$!xml);
+    self
 }
 
 multi to-json(Mojo::DOM:D $dom) is export {
@@ -52,7 +52,7 @@ method ancestors(Mojo::DOM:D: Str:D $selector) {
     _select(self._ancestors, $selector);
 }
 
-method append(Mojo::DOM:D: Str:D $html) Mojo::DOM:D {
+method append(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
     self!add(1, $html);
 }
 
@@ -123,7 +123,7 @@ method namespace(Mojo::DOM:D:) returns Str {
 
     # Extract namespace prefix and search parents
     my $ns = $.tree[1] ~~ /^ (.*?) ':' / ?? "xmlns:$/[0]" !! Str;
-    for flat $tree, self!ancestors -> $node {
+    for flat $.tree, self!ancestors -> $node {
         # Namespace for prefix
         my $attrs = $node[2];
         with $ns {
@@ -174,7 +174,7 @@ method previous(Mojo::DOM:D:) {
     self!maybe(self!siblings(:tags-only, :pos(-1))<before>);
 }
 method previous-node(Mojo::DOM:D:) {
-    self!maybe(self!siblings(:pos(-1))<before>;
+    self!maybe(self!siblings(:pos(-1))<before>);
 }
 
 method remove(Mojo::DOM:D:) { self.replace('') }
@@ -184,9 +184,9 @@ method replace(Mojo::DOM:D: Str:D $html) {
         self.parse($html);
     }
     else {
-        self!replace(self!parent, $tree, _nodes(
+        self!replace(self!parent, $.tree, _nodes(
             Mojo::DOM::HTML::_parse($html)
-        );
+        ));
     }
 }
 
@@ -201,7 +201,7 @@ method root(Mojo::DOM:D:) {
 
 method strip(Mojo::DOM:D:) {
     if $.tree[0] ~~ Tag {
-        self!replace($tree[3], $tree, _nodes($tree));
+        self!replace($.tree[3], $.tree, _nodes($.tree));
     }
     else {
         self;
@@ -209,22 +209,22 @@ method strip(Mojo::DOM:D:) {
 }
 
 multi method tag(Mojo::DOM:D:) returns Str {
-    $.tree[0] ~~ Tag ?? $tree[1] !! Nil
+    $.tree[0] ~~ Tag ?? $.tree[1] !! Nil
 }
 
 multi method tag(Mojo::DOM:D: Str:D $tag) returns Mojo::DOM:D {
     if $.tree[0] ~~ Tag {
-        $tree[1] = $tag;
+        $.tree[1] = $tag;
     }
     self;
 }
 
 method text(Mojo::DOM:D: Bool :$trim, Bool :$recurse) { self!all-text(:$trim, :$recurse); }
-multi method Str(Mojo::DOM:D:) {
+method render(Mojo::DOM:D:) {
     Mojo::DOM::HTML::_render($.tree, :$.xml);
 }
+multi method Str(Mojo::DOM:D:) { self.render }
 
-method tree(Mojo::DOM:D:) { $.tree }
 method type(Mojo::DOM:D:) { $.tree[0] }
 
 my multi _val(Tag, 'option', $dom) { $dom<value> // $dom.text }
@@ -239,7 +239,7 @@ my multi _val(Tag, 'input', $dom) {
 my multi _val(Tag, 'button', $dom) { $dom<value> }
 my multi _val(Tag, 'textarea', $dom) { $dom.text }
 my multi _val(Tag, 'select', $dom) {
-    my $v = $dom.find('option:checked').map({ .val })
+    my $v = $dom.find('option:checked').map({ .val });
     $dom<multiple>:exists ?? $v !! $v[*]
 }
 my multi _val($, $, $dom) { Nil }
@@ -253,9 +253,9 @@ method wrap-content(Mojo::DOM:D: Str:D $html) { self!wrap($html, :content) }
 
 method !add($offset, $new) {
     if $.tree[0] !~~ Root {
-        my $parent = $self!parent;
+        my $parent = self!parent;
         $parent.splice:
-            _offset($parent, $tree) + $offset,
+            _offset($parent, $.tree) + $offset,
             0,
             _link($parent, _nodes(Mojo::DOM::HTML::_parse($new)));
     }
@@ -264,15 +264,17 @@ method !add($offset, $new) {
 }
 
 my sub _all(*@nodes) {
-    @nodes.map: flat .[0] ~~ Tag ?? $_, _all(_nodes($_)) !! $_;
+    @nodes.map: flat .[0] ~~ Tag ?? ($_, _all(_nodes($_))) !! $_;
 }
 
-method !all-text(:$recurse = False, :$trim = True) {
+method !all-text(:$recurse = False, :$trim is copy = True) {
 
     # is an ancestor a <pre> tag? turn off trimming
-    $trim = False if (|self!ancestors, $tree).first({ .[1] eq 'pre' });
+    $trim = False if (|self!ancestors, $.tree).first({
+        .[0] ~~ Tag && .[1] eq 'pre'
+    });
 
-    _text([_nodes($tree)], :$recurse, :$trim);
+    _text([_nodes($.tree)], :$recurse, :$trim);
 }
 
 method !ancestors(:$root) {
@@ -288,11 +290,11 @@ method !ancestors(:$root) {
 }
 
 method !content($new, :$start is copy = False, :$offset is copy = False) {
-    if $tree[0] ~~ Root | Tag {
-        $start  = $start  ?? $tree.elems !! _start($tree);
-        $offset = $offset ?? $tree.end   !! 0;
-        $tree.splice: $start, $offset,
-            _link($tree, _nodes(Mojo::DOM::HTML::_parse($new)));
+    if $.tree[0] ~~ Root | Tag {
+        $start  = $start  ?? $.tree.elems !! _start($.tree);
+        $offset = $offset ?? $.tree.end   !! 0;
+        $.tree.splice: $start, $offset,
+            _link($.tree, _nodes(Mojo::DOM::HTML::_parse($new)));
         self;
     }
     else {
@@ -336,7 +338,7 @@ my sub _offset($parent, $child) {
 method !parent() { $.tree[$.type ~~ Tag ?? 3 !! 2] }
 
 method !replace($parent, $child, @nodes) {
-    $parent.splice: _offset($parent, $child), 1, _link($parnet, @nodes);
+    $parent.splice: _offset($parent, $child), 1, _link($parent, @nodes);
     $.parent;
 }
 
@@ -352,8 +354,8 @@ my sub _select($collection, $selector) {
 method !siblings(:$tags-only, :pos($i)) {
     if $.parent -> $parent {
         my $matched = False;
-        _nodes($parent.tree).classify($node -> {
-            if $node === $tree { $matched++; 'pivot' }
+        _nodes($parent.tree).classify(-> $node {
+            if $node === $.tree { $matched++; 'pivot' }
             else { $matched ?? 'after' !! 'before' }
         });
     }
@@ -372,7 +374,7 @@ my sub _text($nodes, :$recurse, :$trim) {
 
         # Merge successive text nodes
         if $nodes[$i][0] ~~ Text && $next[0] ~~ Text {
-            $nodes.splice($i, 2, [ Text, $nodes[$i][1] ~ $next[1] ];
+            $nodes.splice($i, 2, [ Text, $nodes[$i][1] ~ $next[1] ]);
         }
         else {
             $i++;
@@ -381,17 +383,20 @@ my sub _text($nodes, :$recurse, :$trim) {
 
     my $text = '';
     for $nodes -> $node {
+        next unless $node.elems;
+
         my $chunk = do given $node[0] {
             when Text        { $trim ?? _squish $node[1] !! $node[1] }
             when CDATA | Raw { $node[1] }
             when Tag {
                 if $recurse {
-                    _text([_nodes($node)], :recurse, :trim($node[1] eq 'pre'));
+                    _text([_nodes($node)], :recurse, :trim($node[1] ne 'pre'));
                 }
                 else {
                     ''
                 }
             }
+            default { '' }
         }
 
         $chunk = " $chunk" if $text ~~ / \S $ /
@@ -421,7 +426,7 @@ method !wrap($content, $new) {
             $tree.splice: _start($tree), $tree.end, _link($tree, _nodes($parsed-new));
         }
         else {
-            self!replace($self!parent, $tree, _nodes($parsed-new));
+            self!replace(self!parent, $tree, _nodes($parsed-new));
             push $current, _link($current, $tree);
         }
     }

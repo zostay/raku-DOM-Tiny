@@ -90,14 +90,14 @@ my %BLOCK = set <
   tbody td template textarea tfoot th thead title tr tt u ul xmp
 >;
 
-our enum MarkupType <
+our enum MarkupType is export <
     CDATA Comment Doctype
     PI Raw Root
     Runaway Tag Text
-> is export;
+>;
 
 class TreeMaker {
-    has Bool $.xml;
+    has $.xml;
 
     my sub _end($end, $xml, $current is rw) {
 
@@ -269,11 +269,9 @@ class TreeMaker {
 }
 
 our sub _parse($html, :$xml) {
-    Mojo::DOM.new(
-        tree => Mojo::DOM::HTML::Tokenizer.parse($html,
-            actions => Mojo::DOM::HTML::TreeMaker.new(:$xml),
-        ),
-    );
+    Mojo::DOM::HTML::Tokenizer.parse($html,
+        actions => Mojo::DOM::HTML::TreeMaker.new(:$xml),
+    ).made;
 }
 
 our sub _render($tree, Bool :$xml!) {

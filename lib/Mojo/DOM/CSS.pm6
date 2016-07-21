@@ -1,7 +1,7 @@
 unit class Mojo::DOM::CSS;
 use v6;
 
-use Grammar::Tracer;
+use Mojo::DOM::HTML;
 
 grammar Selector {
     rule TOP { <group> +% ',' }
@@ -174,7 +174,7 @@ my sub _match($group, $current, $tree) {
 my sub _combinator($selectors, $current, $tree, $pos is copy) {
     given $selectors[$pos] {
         when Associative {
-            succeed False unless _selector($c, $current);
+            succeed False unless _selector($_, $current);
             succeed True  unless $_ = $selectors[++$pos];
             proceed;
         }
@@ -215,7 +215,7 @@ my sub _sibling($selectors, $current, $tree, $pos, Bool :$immediate!) {
         return $found if $sibling === $current;
 
         # "+" (immediately preceding sibling)
-        if $immediate { $found = _combinator($selectors, $sibling, $tree, $pos);
+        if $immediate { $found = _combinator($selectors, $sibling, $tree, $pos) }
 
         # "~" (preceding sibling)
         else { return True if _combinator($selectors, $sibling, $tree, $pos) }
@@ -255,11 +255,12 @@ my sub _selector($selector, $current) {
     True;
 }
 
-my sub _pc($class, $args, $current) = @_;
+my sub _pc($class, $args, $current) {
     given $class {
         # :checked
         when 'checked' {
-            $current[2]<checked>:exists || $current[2]<selected>:exists
+            ($current[2]<checked>:exists)
+                || ($current[2]<selected>:exists)
         }
 
         # :not
@@ -309,7 +310,7 @@ my sub _pc($class, $args, $current) = @_;
 
 my sub _select($tree, $group, Bool :$one = False) {
     my @results;
-    my @queue = $tree[($tree[0] ~~ Root ?? 1 !! 4) .. *]
+    my @queue = $tree[($tree[0] ~~ Root ?? 1 !! 4) .. *];
     while @queue.shift -> $current {
         next unless $current[0] ~~ Tag;
 
@@ -358,24 +359,14 @@ my sub _value($op, $value, Bool :$i = False) {
 
     my $unescaped = _unescape($value);
 
-    # TODO There has to be a better way of handling $i here
+    my $rx = do given $op {
+        when '~=' { rx{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
+        when '*=' { rx{ $unescaped } }
+        when '^=' { rx{ ^ $unescaped } }
+        when '$=' { rx{ $unescaped $ } }
+        default   { rx{ ^ $unescaped $ } }
+    }
 
-    if $i {
-        given $op {
-            when '~=' { rx:i{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
-            when '*=' { rx:i{ $unescaped } }
-            when '^=' { rx:i{ ^ $unescaped } }
-            when '$=' { rx:i{ $unescaped $ } }
-            default   { rx:i{ ^ $unescaped $ } }
-        }
-    }
-    else {
-        given $op {
-            when '~=' { rx{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
-            when '*=' { rx{ $unescaped } }
-            when '^=' { rx{ ^ $unescaped } }
-            when '$=' { rx{ $unescaped $ } }
-            default   { rx{ ^ $unescaped $ } }
-        }
-    }
+    $rx = rx:i{ $rx } if $i;
+    $rx;
 }
