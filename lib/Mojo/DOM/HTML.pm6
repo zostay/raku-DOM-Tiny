@@ -90,11 +90,214 @@ my %BLOCK = set <
   tbody td template textarea tfoot th thead title tr tt u ul xmp
 >;
 
-our enum MarkupType is export <
-    CDATA Comment Doctype
-    PI Raw Root
-    Runaway Tag Text
->;
+my class Runaway { }
+class Node is export {
+    method render(:$xml) { ... }
+    method Str { self.render }
+}
+
+class Root { ... }
+role HasChildren { ... }
+
+class DocumentNode is export is Node {
+    has HasChildren $.parent;
+
+    method root(DocumentNode:D:) {
+        given $!parent {
+            when not .defined { Nil }
+            when Root         { $!parent }
+            default           { $!parent.root }
+        }
+    }
+
+    method ancestor-nodes(DocumentNode:D: Bool :$root = False, Bool :$context = False) {
+        return () if $context && self === $*TREE-CONTEXT;
+
+        my $parent = $!parent;
+        gather repeat {
+            take $parent if $parent ~~ DocumentNode || $root;
+            last if $context && $parent === $*TREE-CONTEXT;
+        } while $parent ~~ DocumentNode &&
+              ?($parent = $parent.parent);
+    }
+
+    method trimmable(DocumentNode:D:) returns Bool {
+        !self.ancestor-nodes.first({ .tag eq 'pre' })
+    }
+
+    method siblings(DocumentNode:D: Bool :$tags-only = False, Bool :$including-self = True) {
+        my $siblings = $!parent.child-nodes(:$tags-only);
+        $siblings.grep({ $_ !=== self }) unless $including-self;
+        $siblings
+    }
+
+    method split-siblings(DocumentNode:D: Bool :$tags-only) {
+        my @us = $!parent.child-nodes(:$tags-only);
+        my $pos = @us.first({ $_ === self }, :k);
+
+        before => @us[0 .. $pos - 1],
+        after  => @us[$pos + 1 .. *],
+    }
+}
+
+class Tag { ... }
+class Text { ... }
+role TextNode { ... }
+
+role HasChildren is export {
+    has DocumentNode @.children is rw;
+
+    method descendent-nodes(HasChildren:D: Bool :$tags-only = False) {
+        flat self.child-nodes(:$tags-only).map(-> $node {
+            if $node.WHAT ~~ Tag {
+                ($node, $node.descendants(:$tags-only))
+            }
+            else {
+                $node
+            }
+        });
+    }
+
+    method child-nodes(HasChildren:D: Bool :$tags-only = False) {
+        if $tags-only {
+            @!children.grep(Tag);
+        }
+        else {
+            @!children;
+        }
+    }
+
+    method content(HasChildren:D:) is rw {
+        my $tree = self;
+        Proxy.new(
+            FETCH => method () { $tree.render },
+            STORE => method ($html) {
+                $tree.children = Mojo::DOM::HTML::_parse($html).children;
+            },
+        );
+    }
+
+    method !read-text(:$recurse, :$trim is copy) {
+        $trim &&= self.trimmable;
+
+        my $previous-chunk = '';
+        [~] gather for self.child-nodes.grep(TextNode | HasChildren)\
+                                       .map({ .text(:$trim, :$recurse) })\
+                                       .grep({ / \S+ / or !$trim }) -> $chunk {
+
+            if $previous-chunk ~~ / \S $ / && $chunk ~~ /^ <-[ . ! ? , ; : \s ]>+ / {
+                take " $chunk";
+            }
+            else {
+                take $chunk;
+            }
+
+            $previous-chunk = $chunk;
+        }
+    }
+
+    multi method text(HasChildren:D: Bool :$recurse = True, Bool :$trim = False) is rw {
+        my $tree = self;
+        Proxy.new(
+            FETCH => method ()   { $tree!read-text(:$recurse, :$trim) },
+            STORE => method ($t) {
+                @!children = Text.new(text => $t);
+            },
+        );
+    }
+
+    method render-children(:$xml) { [~] @!children.map({ .render(:$xml) }); }
+}
+
+role TextNode is export {
+    has Str $.text is rw = '';
+
+    method !squished-text { $!text.trim.subst(/\s+/, ' ', :global) }
+
+    multi method text(TextNode:D: Bool :$trim = False) {
+        $trim &&= self.trimmable;
+        $trim ?? self!squished-text !! $!text
+    }
+
+    multi method text(TextNode:D:) is rw { return-rw $!text }
+
+    method content() is rw { $!text }
+}
+
+class CDATA is export is DocumentNode does TextNode {
+    method render(:$xml) { '<![CDATA[' ~ $.text ~ ']]>' }
+}
+
+class Comment is export is DocumentNode {
+    has Str $.comment is rw = '';
+
+    method content() is rw { $!comment }
+
+    method render(:$xml) { '<!--' ~ $!comment ~ '-->' }
+}
+
+class Doctype is export is DocumentNode {
+    has Str $.doctype is rw = '';
+
+    method content() is rw { $!doctype }
+
+    method render(:$xml) { '<!DOCTYPE' ~ $!doctype ~ '>' }
+}
+
+class PI is export is DocumentNode {
+    has Str $.pi is rw = '';
+
+    method content() is rw { $!pi }
+
+    method render(:$xml) { '<?' ~ $!pi ~ '?>' }
+}
+
+class Raw is export is DocumentNode does TextNode {
+    method render(:$xml) { $!text }
+}
+
+class Tag is export is DocumentNode does HasChildren {
+    has Str $.tag is rw is required;
+    has %.attrs is rw;
+
+    method render(:$xml) {
+        # Start tag
+        my $result = "<$!tag";
+
+        # Attributes
+        $result ~= [~] gather for %!attrs.sort».kv -> ($key, $value) {
+            with $value {
+                take qq{ $key="} ~ html-escape($value) ~ '"';
+            }
+            elsif $xml {
+                take qq{ $key="$key"};
+            }
+            else {
+                take " $key";
+            }
+        }
+
+        # No children
+        return $xml          ?? "$result />"
+            !! %EMPTY{$!tag} ?? "$result>"
+            !!                  "$result></$!tag>"
+                unless @!children.elems > 0;
+
+        # Children
+        $result ~= '>' ~ self.render-children(:$xml);
+
+        # End tag
+        "$result\</$!tag>";
+    }
+}
+
+class Text is export is DocumentNode does TextNode {
+    method render(:$xml) { html-escape $!text; }
+}
+
+class Root is export is Node does HasChildren {
+    method render(:$xml) { self.render-children(:$xml) }
+}
 
 class TreeMaker {
     has $.xml;
@@ -106,28 +309,24 @@ class TreeMaker {
         repeat {
 
             # Ignore useless end tag
-            return if $next[0] eq Root;
+            return if $next ~~ Root;
 
             # Right tag
-            return $current = $next[3] if $next[1] eq $end;
+            return $current = $next.parent if $next.tag eq $end;
 
             # Phrasing content can only cross phrasing content
-            return if !$xml && %PHRASING{$end} && !%PHRASING{$next[1]};
+            return if !$xml && %PHRASING{$end} && !%PHRASING{$next.tag};
 
-        } while ?($next = $next[3]);
+        } while ?($next = $next.parent);
 
         # The above loop runs not without this? WTH?
         return;
     }
 
-    my sub _node($current is rw, $type, $content) {
-        push $current, [ $type, $content, $current ];
-    }
-
     my sub _start($start, %attrs, $xml, $current is rw) {
 
         # Autoclose optional HTML elements
-        if !$xml && $current[0] ~~ Root {
+        if !$xml && $current ~~ Root {
             if %END{$start} -> $end {
                 _end($end, False, $current);
             }
@@ -135,21 +334,25 @@ class TreeMaker {
                 my (%allowed, %scope) = |$close;
 
                 # Close allowed parent elements in scope
-                my @parent = $current;
-                while @parent[0] ~~ Root && %scope ∌ @parent[1] {
-                    _end(@parent[1], False, $current) if %scope ∋ @parent[1];
-                    @parent = @parent[3];
+                my $parent = $current;
+                while $parent !~~ Root && %scope ∌ $parent.tag {
+                    _end($parent.tag, False, $current) if %scope ∋ $parent.tag;
+                    $parent = $parent.parent;
                 }
             }
         }
 
         # New tag
-        push $current, my @new = [ Tag, $start, %attrs, $current ];
-        $current = @new;
+        $current.children.push: my $new = Tag.new(
+            tag    => $start,
+            attrs  => %attrs,
+            parent => $current,
+        );
+        $current = $new;
     }
 
     method TOP($/) {
-        my $current = my @tree = [ Root ];
+        my $current = my $tree = Root.new;
 
         my $xml = $.xml // False;
         for $<html-token>».made -> @html-token {
@@ -157,8 +360,8 @@ class TreeMaker {
             my %markup = @html-token[1];
 
             $text ~= '<' if %markup<type> ~~ Runaway;
-            _node($current, Text, html-unescape $text)
-                if defined $text;
+            $current.children.push: Text.new(text => html-unescape($text), parent => $current)
+                with $text;
 
             given %markup<type> {
                 when Tag {
@@ -190,20 +393,29 @@ class TreeMaker {
                 }
 
                 when Doctype {
-                    _node($current, Doctype, %markup<doctype>);
+                    $current.children.push: Doctype.new(
+                        doctype => %markup<doctype>,
+                        parent => $current,
+                    );
                 }
 
                 when Comment {
-                    _node($current, Comment, %markup<comment>);
+                    $current.children.push: Comment.new(
+                        comment => %markup<comment>,
+                        parent  => $current,
+                    );
                 }
 
                 when PI {
-                    _node($current, PI, %markup<pi>);
+                    $current.children.push: PI.new(
+                        pi     => %markup<pi>,
+                        parent => $current,
+                    );
                 }
             }
         }
 
-        make @tree;
+        make $tree;
     }
 
     method html-token($/) {
@@ -272,51 +484,5 @@ our sub _parse($html, :$xml) {
     Mojo::DOM::HTML::Tokenizer.parse($html,
         actions => Mojo::DOM::HTML::TreeMaker.new(:$xml),
     ).made;
-}
-
-our sub _render($tree, Bool :$xml!) {
-
-    given $tree[0] {
-        when Text    { html-escape $tree[1] }
-        when Raw     { $tree[1] }
-        when Doctype { '<!DOCTYPE' ~ $tree[1] ~ '>' }
-        when Comment { '<!--' ~ $tree[1] ~ '-->' }
-        when CDATA   { '<![CDATA[' ~ $tree[1] ~ ']]>' }
-        when PI      { '<?' ~ $tree[1] ~ '?>' }
-        when Root    { [~] $tree[1 .. *].map({ _render($^child, :$xml) }) }
-        when Tag     {
-            # Start tag
-            my $tag    = $tree[1];
-            my $result = "<$tag";
-
-            # Attributes
-            $result ~= [~] gather for $tree[2].sort».kv -> ($key, $value) {
-                with $value {
-                    take qq{ $key="} ~ html-escape($value) ~ '"';
-                }
-                elsif $xml {
-                    take qq{ $key="$key"};
-                }
-                else {
-                    take " $key";
-                }
-            }
-
-            # No children
-            return $xml         ?? "$result />"
-                !! %EMPTY{$tag} ?? "$result>"
-                !!                 "$result></$tag>"
-                    unless $tree[4];
-
-            # Children
-            $result ~= '>' ~ [~] $tree[4 .. *].map({ _render($^child, :$xml) });
-
-            # End tag
-            "$result\</$tag>";
-        }
-        default {
-            die "unknown DOM node type";
-        }
-    }
 }
 

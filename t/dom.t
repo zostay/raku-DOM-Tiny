@@ -12,20 +12,19 @@ is(Mojo::DOM.new.at('p'),            Nil,   'no result');
 is(Mojo::DOM.new.append-content(''), '',    'right result');
 is(Mojo::DOM.new.all-text,           '',    'right result');
 
-# # Simple (basics)
-# my $dom
-#   = Mojo::DOM.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
-# is $dom.at('#b').text, 'B', 'right text';
-# my @div;
-# push @div, $dom.find('div[id]').map('text').each;
-# is_deeply @div, <A B>, 'found all div elements with id';
-# @div = ();
-# $dom.find('div[id]').each(sub { push @div, .text });
-# is_deeply @div, <A B> 'found all div elements with id';
-# is $dom.at('#a').attr('foo'), 0, 'right attribute';
-# is $dom.at('#a').attr<foo>, 0, 'right attribute';
-# is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
-#   'right result';
+# Simple (basics)
+{
+my $dom
+  = Mojo::DOM.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
+is $dom.at('#b').text, 'B', 'right text';
+my @div;
+push @div, $dom.find('div[id]')».text;
+is-deeply @div, <A B>, 'found all div elements with id';
+is $dom.at('#a').attr('foo'), 0, 'right attribute';
+is $dom.at('#a').attr<foo>, 0, 'right attribute';
+is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
+  'right result';
+}
 
 # # Tap into method chain
 # $dom = Mojo::DOM58->new->parse('<div id="a">A</div><div id="b">B</div>');
@@ -39,6 +38,7 @@ is(Mojo::DOM.new.all-text,           '',    'right result');
 #   '0', 'right text');
 
 # Simple nesting with healing (tree structure)
+{
 my $dom = Mojo::DOM.parse(
     q[<foo><bar a="b&lt;c">ju<baz a23>s<bazz />t</bar>works</foo>],
 );
@@ -75,6 +75,7 @@ cmp-ok $dom.tree[1][5][2], '===', $dom.tree[1], 'right parent';
 is $dom.render, q:to/EOF/.trim, 'right result';
 <foo><bar a="b&lt;c">ju<baz a23>s<bazz></bazz>t</baz></bar>works</foo>
 EOF
+}
 
 # # Select based on parent
 # $dom = Mojo::DOM58->new(<<EOF);

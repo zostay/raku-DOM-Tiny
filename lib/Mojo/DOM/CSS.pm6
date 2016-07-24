@@ -3,9 +3,206 @@ use v6;
 
 use Mojo::DOM::HTML;
 
+my class Matcher {
+    has @.joiners;
+
+    multi method ACCEPTS(Matcher:D: Mojo::DOM::HTML:D $current) {
+        $current ~~ any(|@!joiners);
+    }
+}
+
+my class Joiner {
+    has @.combine;
+
+    submethod BUILD(:@combine) {
+        @!combine = @combine.reverse;
+    }
+}
+
+my class AncestorJoiner is Joiner {
+    method no-gaps { False }
+
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
+        return False unless $current ~~ @.combine[0];
+
+        COMBINATION: for @.combine[1 .. *] -> $selector {
+            for $current.ancestor-nodes(:context) -> $current {
+                if $current ~~ $selector {
+                    next COMBINATION;
+                }
+                elsif self.no-gaps {
+                    return False;
+                }
+            }
+
+            return False;
+        }
+
+        True;
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class ParentJoiner is AncestorJoiner {
+    method no-gaps { True }
+}
+
+my class CousinJoiner is Joiner {
+    method no-gaps { False }
+
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
+        return False unless $current ~~ @.combine[0];
+
+        my @cousins = $current.split-siblings<before>.reverse;
+
+        COMBINATION: for @.combine[1 .. *] -> $selector {
+            for @cousins -> $current {
+                if $current ~~ $selector {
+                    next COMBINATION;
+                }
+                elsif self.no-gaps {
+                    return False;
+                }
+            }
+
+            return False;
+        }
+
+        True;
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class SiblingJoiner is CousinJoiner {
+    method no-gaps { True }
+}
+
+my class HasAttr {
+    has $.name;
+
+    submethod BUILD(:$name) {
+        my $unescaped-name = _unescape($name);
+        $!name = regex { [ ^ | ':' ] $unescaped-name $ };
+    }
+
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        $current.attrs ~~ $!name
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class AttrIs is HasAttr {
+    has $!value;
+
+    submethod BUILD(:$op!, :$value!, :$i = False) {
+        my $unescaped = _unescape($value);
+
+        my $rx = do given $op {
+            when '~=' { rx{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
+            when '*=' { rx{ $unescaped } }
+            when '^=' { rx{ ^ $unescaped } }
+            when '$=' { rx{ $unescaped $ } }
+            default   { rx{ ^ $unescaped $ } }
+        }
+
+        $rx = rx:i{ $rx } if $i;
+        $!value = $rx;
+    }
+
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        return False unless callsame;
+        my $name = $current.attrs.keys.first($.name);
+        $current.attrs{ $name } ~~ $!value;
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class TagMatch {
+    has $.name;
+
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        $current ~~ Tag && $current.tag ~~ $!name
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class Pseudo { }
+
+my class PseudoNot is Pseudo {
+    has @.groups;
+
+    multi method ACCEPTS(::?CLASS:D: Node:D $current) {
+        $current ~~ none(|@!groups);
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class PseudoNth is Pseudo {
+    has $.end = False;
+    has $.of-type = False;
+    has $.coeff;
+    has $.offset;
+
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        my $which = $!end ?? 'after' !! 'before';
+        my @siblings = $current.split-siblings(:tags-only){$which};
+        @siblings .= grep({ .tag eq $current.tag }) if $!of-type;
+
+        if $!coeff != 0 {
+            (@siblings.elems + 1 - $!offset) %% $!coeff;
+        }
+        else {
+            @siblings.elems + 1 == $!offset
+        }
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class PseudoOnly is Pseudo {
+    has $.of-type = False;
+
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        my @siblings = $current.siblings(:tags-only, :!including-self);
+        @siblings .= grep({ .tag eq $current.tag }) if $!of-type;
+        @siblings.elems == 0
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class PseudoEmpty is Pseudo {
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        $current.children.grep(none(Comment, PI)).elems == 0
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class PseudoChecked is Pseudo {
+    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+        $current.attrs ~~ / ^ [ checked | selected ] $ /
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
+my class PseudoRoot is Pseudo {
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
+        $current.parent ~~ Root
+    }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
+}
+
 grammar Selector {
-    rule TOP { <group> +% ',' }
-    rule group { <ancestor-child> }
+    rule TOP { <ancestor-child> +% ',' }
 
     rule ancestor-child { <ancestors=.parent-child> + }
     rule parent-child   { <family=.cousins> +% '>' }
@@ -32,7 +229,7 @@ grammar Selector {
     rule pseudo-class:sym<first> { <first-x> }
     rule pseudo-class:sym<last>  { <last-x> }
     rule pseudo-class:sym<only>  { <only-x> }
-    rule pseudo-class:sym<other> { empty | checked | warning }
+    rule pseudo-class:sym<other> { empty | checked | root }
 
     token nth-x {
         | 'nth-child'
@@ -76,55 +273,79 @@ grammar Selector {
 }
 
 class Compiler {
-    method TOP($/)   { make [ $<group>».made ] }
-    method group($/) { make $<ancestor-child>.made }
-
-    method !combinator($/, $group, $joiner, :$flat = True) {
-        my @comb = $/{$group}».made;
-        make roundrobin(@comb, $joiner xx @comb.elems - 1).flat.list;
+    method TOP($/)   {
+        make Matcher.new(joiners => $<ancestor-child>».made);
     }
 
-    method ancestor-child($/) { self!combinator($/, 'ancestors', ' ') }
-    method parent-child($/) { self!combinator($/, 'family', '>') }
-    method cousins($/) { self!combinator($/, 'clans', '~') }
-    method brother-sister($/) { self!combinator($/, 'siblings', '+') }
+    method ancestor-child($/) { make AncestorJoiner.new(combine => $<ancestors>».made) }
+    method parent-child($/)   { make ParentJoiner.new(combine => $<family>».made) }
+    method cousins($/)        { make CousinJoiner.new(combine => $<clans>».made) }
+    method brother-sister($/) { make SiblingJoiner.new(combine => $<siblings>».made) }
 
     method selector:sym<class>($/) {
-        make { attr => (_name('class'), _value('~', ~$<name>)) }
+        make AttrIs.new(
+            name  => 'class',
+            op    => '~=',
+            value => ~$<name>,
+        )
     }
     method selector:sym<id>($/) {
-        make { attr => (_name('id'), _value('', ~$<name>)) }
+        make AttrIs.new(
+            name  => 'id',
+            op    => '=',
+            value => ~$<name>,
+        )
     }
     method selector:sym<attr>($/) {
-        make {
-            attr => (
-                _name(~$<attr-key>),
-                _value(~$<attr-op>, |$<attr-value>.made),
-            )
+        with $<attr-op> {
+            make AttrIs.new(
+                name  => ~$<attr-key>,
+                op    => ~$<attr-op>,
+                |$<attr-value>.made,
+            );
+        }
+        else {
+            make HasAttr.new(name => ~$<attr-key>);
         }
     }
     method selector:sym<pseudo-class>($/) { make $<pseudo-class>.made }
-    method selector:sym<tag>($/) { make { tag => (~$/).trim } }
+    method selector:sym<tag>($/) { make TagMatch.new(name => (~$/).trim) }
+    method selector:sym<any>($/) { make TagMatch.new(name => *) }
 
     method pseudo-class:sym<not>($/) {
-        make { pc => ('not', $<TOP>.made) }
+        make PseudoNot.new(groups => $<TOP>.made)
     }
     method pseudo-class:sym<nth>($/) {
-        make { pc => (~$<nth-x>, $<equation>.made) }
+        my $nth              = ~<$nth-x>;
+        my $end              = $nth ~~ / '-last-' /;
+        my $of-type          = $nth.ends-with('-of-type');
+        my ($coeff, $offset) = |$<equation>.made;
+
+        make PseudoNth.new(:$end, :$of-type, :$coeff, :$offset);
     }
     method pseudo-class:sym<first>($/) {
-        my $suffix = (~$<first-x>).substr('first-'.chars);
-        make { pc => ('nth-' ~ $suffix, [ 0, 1 ]) }
+        my $first   = ~$<first-x>;
+        my $of-type = $first.ends-with('-of-type');
+
+        make PseudoNth.new(:!end, :$of-type, :coeff(0), :offset(1));
     }
     method pseudo-class:sym<last>($/) {
-        my $suffix = (~$<last-x>).substr('last-'.chars);
-        make { pc => ('nth-' ~ $suffix, [ -1, 1 ]) }
+        my $last    = ~$<first-x>;
+        my $of-type = $last.ends-with('-of-type');
+
+        make PseudoNth.new(:!end, :$of-type, :coeff(-1), :offset(1));
     }
     method pseudo-class:sym<only>($/) {
-        make { pc => (~$<only-x>, Nil) }
+        make PseudoOnly.new(
+            of-type => (~$<only-x>).ends-with('-of-type'),
+        );
     }
     method pseudo-class:sym<other>($/) {
-        make { pc => (~$/, Nil) }
+        given ~$/ {
+            when 'empty'   { make PseudoEmpty }
+            when 'checked' { make PseudoChecked }
+            when 'root'    { make PseudoRoot }
+        }
     }
 
     method equation:sym<even>($/)     { make [2, 2] }
@@ -141,204 +362,34 @@ class Compiler {
 
     method attr-value($/) {
         my $i = (~$<case-i> eq 'i');
-        make \($<value>, :$i);
+        make \(value => ~$<value>, :$i);
     }
 }
 
 has $.tree is rw;
 
-method matches(Mojo::DOM::CSS:D: Str:D $css) {
-    $.tree[0] !~~ Tag ?? False !! _match(_compile($css), $.tree, $.tree);
+method matches(Mojo::DOM::CSS:D: Str:D $css) returns Bool:D {
+    $*TREE-CONTEXT = $!tree;
+    $!tree ~~ _compile($css);
 }
 
 method select(Mojo::DOM::CSS:D: Str:D $css) {
-    _select($.tree, _compile($css));
+    my $matcher = _compile($css);
+    my @search = $!tree.child-nodes(:tags-only);
+    gather while @search.shift -> $current {
+        @search.prepend: $current.child-nodes(:tags-only);
+        take $current if $current ~~ $matcher;
+    }
 }
 
-method select-one(Mojo::DOM::CSS:D: Str:D $css) {
-    _select($.tree, _compile($css), :one);
+method select-one(Mojo::DOM::CSS:D: Str:D $css) returns DocumentNode:D {
+    self.select($css)[0]
 }
 
-my sub _compile($css) {
+my sub _compile($css) returns Matcher {
     Mojo::DOM::CSS::Selector.parse($css,
         actions => Mojo::DOM::CSS::Compiler,
     ).made;
-}
-
-my sub _match($group, $current, $tree) {
-    _combinator(.reverse, $current, $tree, 0) and return True
-        for $group;
-    False;
-}
-
-my sub _combinator($selectors, $current, $tree, $pos is copy) {
-    given $selectors[$pos] {
-        when Associative {
-            succeed False unless _selector($_, $current);
-            succeed True  unless $_ = $selectors[++$pos];
-            proceed;
-        }
-
-        when '>' {
-            _ancestor($selectors, $current, $tree, ++$pos, :one);
-        }
-
-        when '~' {
-            _sibling($selectors, $current, $tree, ++$pos, :!immediate);
-        }
-
-        when '+' {
-            _sibling($selectors, $current, $tree, ++$pos, :immediate);
-        }
-
-        when ' ' {
-            _ancestor($selectors, $current, $tree, ++$pos, :!one);
-        }
-
-        default { False }
-    }
-}
-
-my sub _ancestor($selectors, $current is copy, $tree, $pos, Bool :$one!) {
-    while $current = $current[3] {
-        return False if $current[0] ~~ Root || $current === $tree;
-        return True if _combinator($selectors, $current, $tree, $pos);
-        last if $one;
-    }
-
-    return False;
-}
-
-my sub _sibling($selectors, $current, $tree, $pos, Bool :$immediate!) {
-    my $found = False;
-    for _siblings($current) -> $sibling {
-        return $found if $sibling === $current;
-
-        # "+" (immediately preceding sibling)
-        if $immediate { $found = _combinator($selectors, $sibling, $tree, $pos) }
-
-        # "~" (preceding sibling)
-        else { return True if _combinator($selectors, $sibling, $tree, $pos) }
-    }
-
-    return False;
-}
-
-my sub _siblings($current, :$type) {
-    my $parent = $current[3];
-    my @siblings = $parent[($parent[0] ~~ Root ?? 1 !! 4) .. *].grep: { .[0] ~~ Tag };
-    @siblings .= grep({ $type eq .[1] }) with $type;
-    return @siblings;
-}
-
-my sub _selector($selector, $current) {
-    for $selector.kv -> $type, $def {
-        given $type {
-
-            # Tag
-            when 'tag' {
-                succeed False unless $current[1] ~~ $def;
-            }
-
-            # Attributes
-            when 'attr' {
-                succeed False unless _attr(|$def[0,1], $current);
-            }
-
-            # Pseudo-class
-            when 'pc' {
-                succeed False unless _pc(|$def[0,1], $current);
-            }
-        }
-    }
-
-    True;
-}
-
-my sub _pc($class, $args, $current) {
-    given $class {
-        # :checked
-        when 'checked' {
-            ($current[2]<checked>:exists)
-                || ($current[2]<selected>:exists)
-        }
-
-        # :not
-        when 'not' {
-            !_match($args, $current, $current);
-        }
-
-        # :empty
-        when 'empty' {
-            !$current[4 .. *].grep(!_empty(*))
-        }
-
-        # :root
-        when 'root' {
-            $current[3] && $current[3][0] ~~ Root;
-        }
-
-        # :only-child or :only-of-type
-        when 'only-child' | 'only-of-type' {
-            my $type = $class eq 'only-of-type' ?? $current[1] !! Nil;
-            for _siblings($current, $type) -> $s {
-                succeed False if $s !=== $current;
-            }
-
-            True
-        }
-
-        default {
-            # :nth-child, :nth-last-child, :nth-of-type, :nth-last-of-type
-            if $args ~~ Positional {
-                my $type = $class.ends-with('of-type') ?? $current[1] !! Nil;
-                my @siblings = _siblings($current, $type);
-                @siblings .= reverse if $class.starts-with('nth-last');
-
-                for @siblings.keys -> $i {
-                    next if (my $result = $args[0] * $i + $args[1]) < 1;
-                    last unless my $sibling = @siblings[$result - 1];
-                    succeed True if $sibling === $current;
-                }
-            }
-
-            False
-        }
-    }
-}
-
-
-my sub _select($tree, $group, Bool :$one = False) {
-    my @results;
-    my @queue = $tree[($tree[0] ~~ Root ?? 1 !! 4) .. *];
-    while @queue.shift -> $current {
-        next unless $current[0] ~~ Tag;
-
-        @queue.prepend: $current[4 .. *];
-        next unless _match($group, $current, $tree);
-        return $current if $one;
-        push @results, $current;
-    }
-
-    return $one ?? Nil !! @results;
-}
-
-my sub _attr($name-re, $value-re, $current) {
-    my %attrs = $current[2];
-    for %attrs.kv -> $name, $value {
-        next unless $name ~~ $name-re;
-        return True unless defined $value && defined $value-re;
-        return True if $value ~~ $value-re;
-    }
-
-    return False;
-}
-
-my sub _empty($current) { $current[0] ~~ Comment | PI }
-
-my sub _name($name) {
-    my $unescaped-name = _unescape($name);
-    regex { [ ^ | ':' ] $unescaped-name }
 }
 
 my sub _unescape($value is copy) {
@@ -352,21 +403,4 @@ my sub _unescape($value is copy) {
 
     # Remove backslash
     $value .= trans([ '\\' ] => [ '' ]);
-}
-
-my sub _value($op, $value, Bool :$i = False) {
-    return Nil without $value;
-
-    my $unescaped = _unescape($value);
-
-    my $rx = do given $op {
-        when '~=' { rx{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
-        when '*=' { rx{ $unescaped } }
-        when '^=' { rx{ ^ $unescaped } }
-        when '$=' { rx{ $unescaped $ } }
-        default   { rx{ ^ $unescaped $ } }
-    }
-
-    $rx = rx:i{ $rx } if $i;
-    $rx;
 }
