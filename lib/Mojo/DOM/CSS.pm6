@@ -3,16 +3,6 @@ use v6;
 
 use Mojo::DOM::HTML;
 
-my class Matcher {
-    has @.joiners;
-
-    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
-        $current ~~ any(|@!joiners);
-    }
-
-    multi method ACCEPT(::?CLASS:D: $) { False }
-}
-
 my class Joiner {
     has @.combine;
 
@@ -99,7 +89,7 @@ my class HasAttr {
 }
 
 my class AttrIs is HasAttr {
-    has $!value;
+    has $.value;
 
     submethod BUILD(:$op!, :$value!, :$i = False) {
         my $unescaped = _unescape($value);
@@ -211,7 +201,9 @@ grammar Selector {
     rule ancestor-child { <ancestors=.parent-child> + }
     rule parent-child   { <family=.cousins> +% '>' }
     rule cousins        { <clans=.brother-sister> +% '~' }
-    rule brother-sister { <siblings=.selector> +% '+' }
+    rule brother-sister { <siblings=.node-match> +% '+' }
+
+    token node-match { <selector>+ }
 
     proto rule selector      { * }
     rule selector:sym<class> { '.' <name> }
@@ -223,7 +215,7 @@ grammar Selector {
         ':' <pseudo-class>
     }
     token selector:sym<tag> {
-        [ <.escape> \s | '\\.' | <-[,.#:\[ >~+]> ]+ #]
+        [ <.escape> \s | '\\.' | <-[,.#:\[\s>~+]> ]+ #]
     }
     token selector:sym<any> { '*' }
 
@@ -255,10 +247,11 @@ grammar Selector {
     }
 
     token attr-key { [ <.escape> | <[\w -]> ]+ }
-    token attr-value {
-        [ '"' $<value> = [ [ '\\"' | <-["]> ]* ] '"'
-        | "'" $<value> = [ [ "\\'" | <-[']> ]* ] "'"
-        | $<value> = [ <-[\\]> ]+? ]
+    token attr-value { [
+            || '"' $<value> = [ [ '\\"' | <-["]> ]* ] '"'
+            || "'" $<value> = [ [ "\\'" | <-[']> ]* ] "'"
+            || $<value> = [ <-[ \] ]>+ ]
+        ]
         [ \s+ $<case-i> = 'i' ]?
     }
 
@@ -278,7 +271,12 @@ grammar Selector {
 
 class Compiler {
     method TOP($/)   {
-        make Matcher.new(joiners => $<ancestor-child>».made);
+        if $<ancestor-child>.elems > 1 {
+            make any(|$<ancestor-child>».made);
+        }
+        else {
+            make $<ancestor-child>[0].made;
+        }
     }
 
     method ancestor-child($/) {
@@ -314,6 +312,15 @@ class Compiler {
         }
         else {
             make $<siblings>[0].made;
+        }
+    }
+
+    method node-match($/) {
+        if $<selector>.elems > 1 {
+            make all(|$<selector>».made);
+        }
+        else {
+            make $<selector>[0].made;
         }
     }
 
@@ -396,7 +403,7 @@ class Compiler {
     }
 
     method attr-value($/) {
-        my $i = (~$<case-i> eq 'i');
+        my $i = $<case-i> ?? (~$<case-i> eq 'i') !! False;
         make \(value => ~$<value>, :$i);
     }
 }
@@ -422,7 +429,7 @@ method select-one(Mojo::DOM::CSS:D: Str:D $css) returns DocumentNode:D {
     self.select($css).first
 }
 
-my sub _compile($css) returns Matcher {
+my sub _compile($css) {
     Mojo::DOM::CSS::Selector.parse($css,
         actions => Mojo::DOM::CSS::Compiler,
     ).made;

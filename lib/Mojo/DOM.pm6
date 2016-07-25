@@ -43,12 +43,12 @@ multi to-json(Mojo::DOM:D $dom) is export {
     Mojo::DOM::HTML::_render($dom.tree, :$xml)
 }
 
-method all-text(Mojo::DOM:D: Bool :$trim = False) {
+method all-text(Mojo::DOM:D: Bool :$trim = True) {
     $!tree.text(:recurse, :$trim);
 }
 
-method ancestors(Mojo::DOM:D: Str:D $selector) {
-    _select(self.tree.ancestor-nodes, $selector);
+method ancestors(Mojo::DOM:D: Str $selector?) {
+    self!select(self.tree.ancestor-nodes, $selector);
 }
 
 method append(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
@@ -80,7 +80,7 @@ method at(Mojo::DOM:D: Str:D $css) returns Mojo::DOM {
 }
 
 multi method attr(Mojo::DOM:D: Str:D $name) returns Str {
-    $.attr{ $name };
+    $.attr{ $name } // Str;
 }
 
 multi method attr(Mojo::DOM:D: Str:D $name, Str:D $value) returns Mojo::DOM:D {
@@ -94,9 +94,11 @@ multi method attr(Mojo::DOM:D: *%values) {
     self;
 }
 
-method child-nodes(Mojo::DOM:D: Bool :$tags-only = False) { $!tree.child-nodes(:$tags-only) }
-method children(Mojo::DOM:D: Str:D $css) {
-    _select($!tree.child-nodes(:tags-only), $css);
+method child-nodes(Mojo::DOM:D: Bool :$tags-only = False) {
+    $!tree.child-nodes(:$tags-only)
+}
+method children(Mojo::DOM:D: Str $css?) {
+    self!select($!tree.child-nodes(:tags-only), $css);
 }
 
 multi method content(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
@@ -113,7 +115,7 @@ method find(Mojo::DOM:D: Str:D $css) {
     });
 }
 method following(Mojo::DOM:D: Str:D $css) {
-    _select(self!siblings(:tags-only)<after>, $css)
+    self!select(self!siblings(:tags-only)<after>, $css)
 }
 method following-nodes(Mojo::DOM:D:) { self!siblings()<after> }
 
@@ -157,7 +159,7 @@ method parent(Mojo::DOM:D:) returns Mojo::DOM {
 }
 
 method preceding(Mojo::DOM:D: Str:D $css) {
-    _select(self!siblings(:tags-only)<before>, $css);
+    self!select(self!siblings(:tags-only)<before>, $css);
 }
 method preceding-nodes(Mojo::DOM:D:) {
     self!siblings()<before>;
@@ -181,7 +183,7 @@ method prepend-content(Mojo::DOM:D: Str:D $html) {
 }
 
 method previous(Mojo::DOM:D:) {
-    self!maybe(self!siblings(:tags-only, :pos(-1))<before>);
+    self!maybe(self!siblings(:tags-only, :pos(*-1))<before>);
 }
 method previous-node(Mojo::DOM:D:) {
     self!maybe(self!siblings(:pos(-1))<before>);
@@ -273,8 +275,8 @@ my sub _link($parent, @children) {
     return @children;
 }
 
-method !maybe($what) {
-    $what ?? Mojo::DOM.new(:$what, :$!xml) !! Nil
+method !maybe($tree) {
+    $tree ?? Mojo::DOM.new(:$tree, :$!xml) !! Nil
 }
 
 method !replace($parent, $child, @nodes) {
@@ -283,13 +285,14 @@ method !replace($parent, $child, @nodes) {
     $.parent;
 }
 
-my sub _select($collection, $selector) {
-    if $selector {
-        $collection.grep: { .matches($selector) };
-    }
-    else {
-        $collection;
-    }
+method !select($collection, $selector?) {
+    map { Mojo::DOM.new(:$^tree, :$!xml) },
+        do if $selector {
+            $collection.grep: { .matches($selector) };
+        }
+        else {
+            $collection;
+        };
 }
 
 method !siblings(:$tags-only, :$pos) {

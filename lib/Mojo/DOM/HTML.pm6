@@ -9,19 +9,23 @@ grammar Tokenizer {
     token html-token { <markup> }
 
     proto token markup { * }
-    token markup:sym<doctype> {
-        '<!DOCTYPE' $<doctype> = [
-        \s+ \w+                                                          # Doctype
-        [ [ \s+ \w+ ]? [ \s+ [ '"' <-["]>* '"' | "'" <-[']>* "'" ] ]+ ]? # External ID
-        [ \s+ "[" .+? "]" ]?                                             # Int Subset
-        \s* ] '>'
-    }
-    token markup:sym<comment> { '<--' $<comment> = [ .*? ] '--' \s* '>' }
-    token markup:sym<cdata> { '<[CDATA[' .*? ']]>' }
+    token markup:sym<doctype> { :i '<!DOCTYPE' <.ws> <doctype> '>' }
+    token markup:sym<comment> { '<!--' $<comment> = [ .*? ] '-->' }
+    token markup:sym<cdata> { '<![CDATA[' $<cdata> = [ .*? ] ']]>' }
     token markup:sym<pi> { '<?' $<pi> = [ .*? ] '?>' }
     token markup:sym<tag> { '<' \s* <end-mark>? \s* <tag-name> [ \s+ <attr> ** 0..32766 ]? <empty-tag-mark>? '>' }
     token markup:sym<text> { <-[ < ]>+ }
     token markup:sym<runaway-lt> { '<' }
+
+    rule doctype {
+        <root-element>
+        [ <pub-priv>? <external-id>+ ]?
+        [ '[' <internal-subset> ']' ]?
+    }
+    token root-element { \w+ }
+    token pub-priv { \w+ }
+    token external-id { '"' <-["]>* '"' | "'" <-[']>* "'" }
+    token doctype-uri { <-[ \] ]>+ }
 
     token end-mark { '/' }
     token empty-tag-mark { '/' }
@@ -216,7 +220,7 @@ role TextNode is export {
 
     method !squished-text { $!text.trim.subst(/\s+/, ' ', :global) }
 
-    multi method text(TextNode:D: Bool :$trim = False) {
+    multi method text(TextNode:D: Bool :$trim is copy = False) {
         $trim &&= self.trimmable;
         $trim ?? self!squished-text !! $!text
     }
@@ -243,7 +247,7 @@ class Doctype is export is DocumentNode {
 
     method content() is rw { $!doctype }
 
-    method render(:$xml) { '<!DOCTYPE' ~ $!doctype ~ '>' }
+    method render(:$xml) { '<!DOCTYPE ' ~ $!doctype ~ '>' }
 }
 
 class PI is export is DocumentNode {
@@ -298,6 +302,7 @@ class Text is export is DocumentNode does TextNode {
 }
 
 class Root is export is Node does HasChildren {
+    method trimmable(Root:D:) { True }
     method render(:$xml) { self.render-children(:$xml) }
 }
 
@@ -398,6 +403,13 @@ class TreeMaker {
                     $current.children.push: Comment.new(
                         comment => %markup<comment>,
                         parent  => $current,
+                    );
+                }
+
+                when CDATA {
+                    $current.children.push: CDATA.new(
+                        text   => %markup<cdata>,
+                        parent => $current,
                     );
                 }
 
