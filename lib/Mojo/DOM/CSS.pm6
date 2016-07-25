@@ -24,12 +24,14 @@ my class Joiner {
 my class AncestorJoiner is Joiner {
     method no-gaps { False }
 
-    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current is copy) {
         return False unless $current ~~ @.combine[0];
 
+        my @ancestors = $current.ancestor-nodes(:context);
         COMBINATION: for @.combine[1 .. *] -> $selector {
-            for $current.ancestor-nodes(:context) -> $current {
+            for @ancestors -> $current {
                 if $current ~~ $selector {
+                    shift @ancestors;
                     next COMBINATION;
                 }
                 elsif self.no-gaps {
@@ -279,10 +281,41 @@ class Compiler {
         make Matcher.new(joiners => $<ancestor-child>».made);
     }
 
-    method ancestor-child($/) { make AncestorJoiner.new(combine => $<ancestors>».made) }
-    method parent-child($/)   { make ParentJoiner.new(combine => $<family>».made) }
-    method cousins($/)        { make CousinJoiner.new(combine => $<clans>».made) }
-    method brother-sister($/) { make SiblingJoiner.new(combine => $<siblings>».made) }
+    method ancestor-child($/) {
+        if $<ancestors>.elems > 1 {
+            make AncestorJoiner.new(combine => $<ancestors>».made);
+        }
+        else {
+            make $<ancestors>[0].made;
+        }
+    }
+
+    method parent-child($/)   {
+        if $<family>.elems > 1 {
+            make ParentJoiner.new(combine => $<family>».made);
+        }
+        else {
+            make $<family>[0].made;
+        }
+    }
+
+    method cousins($/)        {
+        if $<clans>.elems > 1 {
+            make CousinJoiner.new(combine => $<clans>».made);
+        }
+        else {
+            make $<clans>[0].made;
+        }
+    }
+
+    method brother-sister($/) {
+        if $<siblings>.elems > 1 {
+            make SiblingJoiner.new(combine => $<siblings>».made);
+        }
+        else {
+            make $<siblings>[0].made;
+        }
+    }
 
     method selector:sym<class>($/) {
         make AttrIs.new(
@@ -376,10 +409,10 @@ method matches(Mojo::DOM::CSS:D: Str:D $css) returns Bool:D {
 }
 
 method select(Mojo::DOM::CSS:D: Str:D $css) {
-    my $*TREE-CONTEXT = $!tree;
     my $matcher = _compile($css);
     my @search = $!tree.child-nodes(:tags-only);
     gather while @search.shift -> $current {
+        my $*TREE-CONTEXT = $!tree;
         @search.prepend: $current.child-nodes(:tags-only);
         take $current if $current ~~ $matcher;
     }

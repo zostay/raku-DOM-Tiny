@@ -77,21 +77,23 @@ is $dom.render, q:to/EOF/.trim, 'right result';
 EOF
 }
 
-# # Select based on parent
-# $dom = Mojo::DOM58->new(<<EOF);
-# <body>
-#   <div>test1</div>
-#   <div><div>test2</div></div>
-# <body>
-# EOF
-# is $dom->find('body > div')->[0]->text, 'test1', 'right text';
-# is $dom->find('body > div')->[1]->text, '',      'no content';
-# is $dom->find('body > div')->[2], undef, 'no result';
-# is $dom->find('body > div')->size, 2, 'right number of elements';
-# is $dom->find('body > div > div')->[0]->text, 'test2', 'right text';
-# is $dom->find('body > div > div')->[1], undef, 'no result';
-# is $dom->find('body > div > div')->size, 1, 'right number of elements';
-#
+# Select based on parent
+{
+my $dom = Mojo::DOM.parse(q:to/EOF/);
+<body>
+  <div>test1</div>
+  <div><div>test2</div></div>
+<body>
+EOF
+is $dom.find('body > div')[0].text, 'test1', 'right text';
+is $dom.find('body > div')[1].text, '',      'no content';
+is $dom.find('body > div')[2], Nil, 'no result';
+is $dom.find('body > div').elems, 2, 'right number of elements';
+is $dom.find('body > div > div')[0].text, 'test2', 'right text';
+is $dom.find('body > div > div')[1], Nil, 'no result';
+is $dom.find('body > div > div').elems, 1, 'right number of elements';
+}
+
 # # A bit of everything (basic navigation)
 # $dom = Mojo::DOM58->new->parse(<<EOF);
 # <!doctype foo>

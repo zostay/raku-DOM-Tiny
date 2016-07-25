@@ -180,8 +180,10 @@ role HasChildren is export {
     method !read-text(:$recurse, :$trim is copy) {
         $trim &&= self.trimmable;
 
+        my $which-children = $recurse ?? TextNode | HasChildren !! TextNode;
+
         my $previous-chunk = '';
-        [~] gather for self.child-nodes.grep(TextNode | HasChildren)\
+        [~] gather for self.child-nodes.grep($which-children)\
                                        .map({ .text(:$trim, :$recurse) })\
                                        .grep({ / \S+ / or !$trim }) -> $chunk {
 
@@ -196,7 +198,7 @@ role HasChildren is export {
         }
     }
 
-    multi method text(HasChildren:D: Bool :$recurse = True, Bool :$trim = False) is rw {
+    multi method text(HasChildren:D: Bool :$recurse = False, Bool :$trim = False) is rw {
         my $tree = self;
         Proxy.new(
             FETCH => method ()   { $tree!read-text(:$recurse, :$trim) },
