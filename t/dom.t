@@ -25,16 +25,18 @@ is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
   'right result';
 }
 
-# # Tap into method chain
-# $dom = Mojo::DOM58->new->parse('<div id="a">A</div><div id="b">B</div>');
-# is_deeply [$dom->find('[id]')->map(attr => 'id')->each], [qw(a b)],
-#   'right result';
-# is $dom->tap(sub { $_->at('#b')->remove }), '<div id="a">A</div>',
-#   'right result';
-#
-# # Build tree from scratch
-# is(Mojo::DOM58->new->append_content('<p>')->at('p')->append_content('0')->text,
-#   '0', 'right text');
+# Tap into method chain
+{
+my $dom = Mojo::DOM.parse('<div id="a">A</div><div id="b">B</div>');
+is-deeply $dom.find('[id]')».attr('id'), <a b>,
+  'right result';
+is { $dom.at('#b').remove; $dom }(), '<div id="a">A</div>',
+  'right result';
+
+# Build tree from scratch
+is(Mojo::DOM.new.append-content('<p>').at('p').append-content('0').text,
+  '0', 'right text');
+}
 
 # Simple nesting with healing (tree structure)
 {

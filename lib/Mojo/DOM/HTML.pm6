@@ -6,8 +6,7 @@ use Mojo::DOM::Entities;
 grammar Tokenizer {
     token TOP { <html-token>* }
 
-    token html-token { <text>? <markup> }
-    token text { <-[ < ]>+ }
+    token html-token { <markup> }
 
     proto token markup { * }
     token markup:sym<doctype> {
@@ -21,6 +20,7 @@ grammar Tokenizer {
     token markup:sym<cdata> { '<[CDATA[' .*? ']]>' }
     token markup:sym<pi> { '<?' $<pi> = [ .*? ] '?>' }
     token markup:sym<tag> { '<' \s* <end-mark>? \s* <tag-name> [ \s+ <attr> ** 0..32766 ]? <empty-tag-mark>? '>' }
+    token markup:sym<text> { <-[ < ]>+ }
     token markup:sym<runaway-lt> { '<' }
 
     token end-mark { '/' }
@@ -100,7 +100,7 @@ class Root { ... }
 role HasChildren { ... }
 
 class DocumentNode is export is Node {
-    has HasChildren $.parent;
+    has HasChildren $.parent is rw;
 
     method root(DocumentNode:D:) {
         given $!parent {
@@ -355,14 +355,7 @@ class TreeMaker {
         my $current = my $tree = Root.new;
 
         my $xml = $.xml // False;
-        for $<html-token>».made -> @html-token {
-            my $text   = @html-token[0];
-            my %markup = @html-token[1];
-
-            $text ~= '<' if %markup<type> ~~ Runaway;
-            $current.children.push: Text.new(text => html-unescape($text), parent => $current)
-                with $text;
-
+        for $<html-token>».made -> %markup {
             given %markup<type> {
                 when Tag {
 
@@ -406,9 +399,23 @@ class TreeMaker {
                     );
                 }
 
+                when Text {
+                    $current.children.push: Text.new(
+                        text   => %markup<text>,
+                        parent => $current,
+                    );
+                }
+
                 when PI {
                     $current.children.push: PI.new(
                         pi     => %markup<pi>,
+                        parent => $current,
+                    );
+                }
+
+                when Runaway {
+                    $current.children.push: Text.new(
+                        text   => '<',
                         parent => $current,
                     );
                 }
@@ -419,10 +426,15 @@ class TreeMaker {
     }
 
     method html-token($/) {
-        make [ $<text>.made, $<markup>.made ];
+        make $<markup>.made;
     }
 
-    method text($/) { make ~$/ }
+    method markup:sym<text>($/) {
+        make {
+            type => Text,
+            text => ~$/,
+        }
+    }
 
     method markup:sym<tag>($/) {
         make {

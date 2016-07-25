@@ -48,7 +48,7 @@ method all-text(Mojo::DOM:D: Bool :$trim = False) {
 }
 
 method ancestors(Mojo::DOM:D: Str:D $selector) {
-    _select(self._ancestors, $selector);
+    _select(self.tree.ancestor-nodes, $selector);
 }
 
 method append(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
@@ -62,8 +62,9 @@ method append(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
 
 method append-content(Mojo::DOM:D: Str:D $html) {
     if $!tree ~~ HasChildren {
+        my @children = Mojo::DOM::HTML::_parse($html, :$!xml).children;
         $!tree.children.append:
-            _link($!tree, Mojo::DOM::HTML::_parse($html, :$!xml).child-nodes);
+            _link($!tree, Mojo::DOM::HTML::_parse($html, :$!xml).children);
     }
 
     self;
@@ -106,7 +107,11 @@ multi method content(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
 multi method content(Mojo::DOM:D:) is rw returns Str:D { $!tree.content }
 
 method descendant-nodes(Mojo::DOM:D:) { $!tree.descendant-nodes }
-method find(Mojo::DOM:D: Str:D $css) { $.css.select($css) }
+method find(Mojo::DOM:D: Str:D $css) {
+    $.css.select($css).map({
+        Mojo::DOM.new(tree => $_, :$!xml)
+    });
+}
 method following(Mojo::DOM:D: Str:D $css) {
     _select(self!siblings(:tags-only)<after>, $css)
 }
