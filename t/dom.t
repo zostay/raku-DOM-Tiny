@@ -17,9 +17,8 @@ is(Mojo::DOM.new.all-text,           '',    'right result');
 my $dom
   = Mojo::DOM.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
 is $dom.at('#b').text, 'B', 'right text';
-my @div;
-push @div, $dom.find('div[id]')».text;
-is-deeply @div, <A B>, 'found all div elements with id';
+my $div := $dom.find('div[id]')».text;
+is-deeply $div, <A B>, 'found all div elements with id';
 is $dom.at('#a').attr('foo'), 0, 'right attribute';
 is $dom.at('#a').attr<foo>, 0, 'right attribute';
 is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
@@ -42,36 +41,35 @@ is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
 my $dom = Mojo::DOM.parse(
     q[<foo><bar a="b&lt;c">ju<baz a23>s<bazz />t</bar>works</foo>],
 );
-# dd $dom;
-is $dom.tree[0], Root, 'right type';
-is $dom.tree[1][0], Tag, 'right type';
-is $dom.tree[1][1], 'foo', 'right tag';
-is-deeply $dom.tree[1][2], {}, 'empty attributes';
-cmp-ok $dom.tree[1][3], '===', $dom.tree, 'right parent';
-is $dom.tree[1][4][0], Tag, 'right type';
-is $dom.tree[1][4][1], 'bar', 'right tag';
-is-deeply $dom.tree[1][4][2], {a => 'b<c'}, 'right attributes';
-cmp-ok $dom.tree[1][4][3], '===', $dom.tree[1], 'right parent';
-is $dom.tree[1][4][4][0], Text, 'right type';
-is $dom.tree[1][4][4][1], 'ju',   'right text';
-cmp-ok $dom.tree[1][4][4][2], '===', $dom.tree[1][4], 'right parent';
-is $dom.tree[1][4][5][0], Tag, 'right type';
-is $dom.tree[1][4][5][1], 'baz', 'right tag';
-is-deeply $dom.tree[1][4][5][2], {a23 => Nil}, 'right attributes';
-cmp-ok $dom.tree[1][4][5][3], '===', $dom.tree[1][4], 'right parent';
-is $dom.tree[1][4][5][4][0], Text, 'right type';
-is $dom.tree[1][4][5][4][1], 's',    'right text';
-cmp-ok $dom.tree[1][4][5][4][2], '===', $dom.tree[1][4][5], 'right parent';
-is $dom.tree[1][4][5][5][0], Tag,  'right type';
-is $dom.tree[1][4][5][5][1], 'bazz', 'right tag';
-is-deeply $dom.tree[1][4][5][5][2], {}, 'empty attributes';
-cmp-ok $dom.tree[1][4][5][5][3], '===', $dom.tree[1][4][5], 'right parent';
-is $dom.tree[1][4][5][6][0], Text, 'right type';
-is $dom.tree[1][4][5][6][1], 't',    'right text';
-cmp-ok $dom.tree[1][4][5][6][2], '===', $dom.tree[1][4][5], 'right parent';
-is $dom.tree[1][5][0], Text,  'right type';
-is $dom.tree[1][5][1], 'works', 'right text';
-cmp-ok $dom.tree[1][5][2], '===', $dom.tree[1], 'right parent';
+cmp-ok $dom.tree, '~~', Root, 'right type';
+cmp-ok $dom.tree.children[0], '~~', Tag, 'right type';
+is $dom.tree.children[0].tag, 'foo', 'right tag';
+is-deeply $dom.tree.children[0].attrs, {}, 'empty attributes';
+cmp-ok $dom.tree.children[0].parent, '===', $dom.tree, 'right parent';
+cmp-ok $dom.tree.children[0].children[0], '~~', Tag, 'right type';
+is $dom.tree.children[0].children[0].tag, 'bar', 'right tag';
+is-deeply $dom.tree.children[0].children[0].attrs, {a => 'b<c'}, 'right attributes';
+cmp-ok $dom.tree.children[0].children[0].parent, '===', $dom.tree.children[0], 'right parent';
+cmp-ok $dom.tree.children[0].children[0].children[0], '~~', Text, 'right type';
+is $dom.tree.children[0].children[0].children[0].text, 'ju',   'right text';
+cmp-ok $dom.tree.children[0].children[0].children[0].parent, '===', $dom.tree.children[0].children[0], 'right parent';
+cmp-ok $dom.tree.children[0].children[0].children[1], '~~', Tag, 'right type';
+is $dom.tree.children[0].children[0].children[1].tag, 'baz', 'right tag';
+is-deeply $dom.tree.children[0].children[0].children[1].attrs, {a23 => Nil}, 'right attributes';
+cmp-ok $dom.tree.children[0].children[0].children[1].parent, '===', $dom.tree.children[0].children[0], 'right parent';
+cmp-ok $dom.tree.children[0].children[0].children[1].children[0], '~~', Text, 'right type';
+is $dom.tree.children[0].children[0].children[1].children[0].text, 's',    'right text';
+cmp-ok $dom.tree.children[0].children[0].children[1].children[0].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
+cmp-ok $dom.tree.children[0].children[0].children[1].children[1], '~~', Tag,  'right type';
+is $dom.tree.children[0].children[0].children[1].children[1].tag, 'bazz', 'right tag';
+is-deeply $dom.tree.children[0].children[0].children[1].children[1].attrs, {}, 'empty attributes';
+cmp-ok $dom.tree.children[0].children[0].children[1].children[1].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
+cmp-ok $dom.tree.children[0].children[0].children[1].children[2], '~~', Text, 'right type';
+is $dom.tree.children[0].children[0].children[1].children[2].text, 't',    'right text';
+cmp-ok $dom.tree.children[0].children[0].children[1].children[2].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
+cmp-ok $dom.tree.children[0].children[1], '~~', Text, 'right type';
+is $dom.tree.children[0].children[1].text, 'works', 'right text';
+cmp-ok $dom.tree.children[0].children[1].parent, '===', $dom.tree.children[0], 'right parent';
 is $dom.render, q:to/EOF/.trim, 'right result';
 <foo><bar a="b&lt;c">ju<baz a23>s<bazz></bazz>t</baz></bar>works</foo>
 EOF

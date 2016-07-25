@@ -6,7 +6,7 @@ use Mojo::DOM::HTML;
 
 my package EXPORT::DEFAULT {
     for < Root Text Tag Raw PI Doctype Comment CDATA DocumentNode Node HasChildren TextNode > -> $type {
-        OUR::{ "$type" } := ::{ "Mojo::DOM::HTML::$type" };
+        OUR::{ "$type" } := Mojo::DOM::HTML::{ $type };
     }
 }
 
@@ -78,11 +78,7 @@ method at(Mojo::DOM:D: Str:D $css) returns Mojo::DOM {
     }
 }
 
-multi method attr(Mojo::DOM:D:) returns Hash:D {
-    $!tree !~~ Tag ?? {} !! $!tree.attrs;
-}
-
-multi method attr(Mojo::DOM:D: Str:D $name) returns Str:D {
+multi method attr(Mojo::DOM:D: Str:D $name) returns Str {
     $.attr{ $name };
 }
 
@@ -91,7 +87,8 @@ multi method attr(Mojo::DOM:D: Str:D $name, Str:D $value) returns Mojo::DOM:D {
     self;
 }
 
-multi method attr(Mojo::DOM:D: *%values) returns Mojo::DOM:D {
+multi method attr(Mojo::DOM:D: *%values) {
+    return $!tree !~~ Tag ?? {} !! $!tree.attrs unless %values;
     $.attr{ keys %values } = values %values;
     self;
 }

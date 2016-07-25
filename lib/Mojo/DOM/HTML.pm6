@@ -111,7 +111,7 @@ class DocumentNode is export is Node {
     }
 
     method ancestor-nodes(DocumentNode:D: Bool :$root = False, Bool :$context = False) {
-        return () if $context && self === $*TREE-CONTEXT;
+        return () if $context && $*TREE-CONTEXT && self === $*TREE-CONTEXT;
 
         my $parent = $!parent;
         gather repeat {
@@ -135,8 +135,8 @@ class DocumentNode is export is Node {
         my @us = $!parent.child-nodes(:$tags-only);
         my $pos = @us.first({ $_ === self }, :k);
 
-        before => @us[0 .. $pos - 1],
-        after  => @us[$pos + 1 .. *],
+        % = before => @us[0 .. $pos - 1],
+            after  => @us[$pos + 1 .. *],
     }
 }
 
@@ -476,7 +476,8 @@ class TreeMaker {
         }
     }
 
-    method attr-key($/)   { make ~$/ }
+    # TODO It would be nicer if we had a case-insensitive hash
+    method attr-key($/)   { make $!xml ?? ~$/ !! (~$/).lc }
     method attr-value($/) { make html-unescape ~$<raw-value> }
 }
 

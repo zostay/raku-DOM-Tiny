@@ -6,9 +6,11 @@ use Mojo::DOM::HTML;
 my class Matcher {
     has @.joiners;
 
-    multi method ACCEPTS(Matcher:D: Mojo::DOM::HTML:D $current) {
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
         $current ~~ any(|@!joiners);
     }
+
+    multi method ACCEPT(::?CLASS:D: $) { False }
 }
 
 my class Joiner {
@@ -369,11 +371,12 @@ class Compiler {
 has $.tree is rw;
 
 method matches(Mojo::DOM::CSS:D: Str:D $css) returns Bool:D {
-    $*TREE-CONTEXT = $!tree;
+    my $*TREE-CONTEXT = $!tree;
     $!tree ~~ _compile($css);
 }
 
 method select(Mojo::DOM::CSS:D: Str:D $css) {
+    my $*TREE-CONTEXT = $!tree;
     my $matcher = _compile($css);
     my @search = $!tree.child-nodes(:tags-only);
     gather while @search.shift -> $current {
@@ -383,7 +386,7 @@ method select(Mojo::DOM::CSS:D: Str:D $css) {
 }
 
 method select-one(Mojo::DOM::CSS:D: Str:D $css) returns DocumentNode:D {
-    self.select($css)[0]
+    self.select($css).first
 }
 
 my sub _compile($css) returns Matcher {
