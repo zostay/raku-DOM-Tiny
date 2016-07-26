@@ -10,7 +10,7 @@ my package EXPORT::DEFAULT {
     }
 }
 
-has $.tree = Root.new;
+has Node $.tree = Root.new;
 has Bool $.xml;
 
 multi method Bool(Mojo::DOM:U:) returns Bool:D { False }
@@ -95,8 +95,9 @@ multi method attr(Mojo::DOM:D: *%values) {
 }
 
 method child-nodes(Mojo::DOM:D: Bool :$tags-only = False) {
-    $!tree.child-nodes(:$tags-only)
+    self!select($!tree.child-nodes(:$tags-only));
 }
+
 method children(Mojo::DOM:D: Str $css?) {
     self!select($!tree.child-nodes(:tags-only), $css);
 }
@@ -108,7 +109,9 @@ multi method content(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
 
 multi method content(Mojo::DOM:D:) is rw returns Str:D { $!tree.content }
 
-method descendant-nodes(Mojo::DOM:D:) { $!tree.descendant-nodes }
+method descendant-nodes(Mojo::DOM:D:) {
+    self!select($!tree.descendant-nodes);
+}
 method find(Mojo::DOM:D: Str:D $css) {
     $.css.select($css).map({
         Mojo::DOM.new(tree => $_, :$!xml)
@@ -186,7 +189,7 @@ method previous(Mojo::DOM:D:) {
     self!maybe(self!siblings(:tags-only, :pos(*-1))<before>);
 }
 method previous-node(Mojo::DOM:D:) {
-    self!maybe(self!siblings(:pos(-1))<before>);
+    self!maybe(self!siblings(:pos(*-1))<before>);
 }
 
 method remove(Mojo::DOM:D:) { self.replace('') }
@@ -286,21 +289,22 @@ method !replace($parent, $child, @nodes) {
 }
 
 method !select($collection, $selector?) {
-    map { Mojo::DOM.new(:$^tree, :$!xml) },
-        do if $selector {
-            $collection.grep: { .matches($selector) };
-        }
-        else {
-            $collection;
-        };
+    my $list := do if $selector {
+        $collection.grep: { .matches($selector) };
+    }
+    else {
+        $collection;
+    };
+
+    $list.map: { Mojo::DOM.new(:$^tree, :$!xml) };
 }
 
-method !siblings(:$tags-only, :$pos) {
+method !siblings(:$tags-only = False, :$pos) {
     my %split = do if $!tree ~~ DocumentNode {
         $!tree.split-siblings(:$tags-only);
     }
     else {
-        ()
+        { before => [], after => [] },
     }
 
     with $pos {

@@ -151,10 +151,10 @@ role TextNode { ... }
 role HasChildren is export {
     has DocumentNode @.children is rw;
 
-    method descendent-nodes(HasChildren:D: Bool :$tags-only = False) {
+    method descendant-nodes(HasChildren:D: Bool :$tags-only = False) {
         flat self.child-nodes(:$tags-only).map(-> $node {
             if $node.WHAT ~~ Tag {
-                ($node, $node.descendants(:$tags-only))
+                ($node, $node.descendant-nodes(:$tags-only))
             }
             else {
                 $node
