@@ -27,12 +27,12 @@ method AT-KEY(Mojo::DOM:D: Str:D $k) is rw {
 }
 method hash(Mojo::DOM:D:) { self.attr }
 
-multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
+multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml = False) returns Mojo::DOM:D {
     my $tree = Mojo::DOM::HTML::_parse($html, :$xml);
     Mojo::DOM.new(:$tree, :$xml);
 }
 
-multi method parse(Mojo::DOM:D: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
+multi method parse(Mojo::DOM:D: Str:D $html, Bool :$xml = False) returns Mojo::DOM:D {
     $!xml  = $xml with $xml;
     $!tree = Mojo::DOM::HTML::_parse($html, :$!xml);
     self
@@ -65,9 +65,17 @@ method append-content(Mojo::DOM:D: Str:D $html) {
         my @children = Mojo::DOM::HTML::_parse($html, :$!xml).children;
         $!tree.children.append:
             _link($!tree, Mojo::DOM::HTML::_parse($html, :$!xml).children);
+        self;
     }
-
-    self;
+    elsif $!tree ~~ TextNode {
+        my $parent = $!tree.parent;
+        $parent.children.append:
+            _link($parent, Mojo::DOM::HTML::_parse($html, :$!xml).children);
+        $.parent;
+    }
+    else {
+        self;
+    }
 }
 
 method at(Mojo::DOM:D: Str:D $css) returns Mojo::DOM {
@@ -117,7 +125,7 @@ method find(Mojo::DOM:D: Str:D $css) {
         Mojo::DOM.new(tree => $_, :$!xml)
     });
 }
-method following(Mojo::DOM:D: Str:D $css) {
+method following(Mojo::DOM:D: Str $css?) {
     self!select(self!siblings(:tags-only)<after>, $css)
 }
 method following-nodes(Mojo::DOM:D:) { self!siblings()<after> }
@@ -161,7 +169,7 @@ method parent(Mojo::DOM:D:) returns Mojo::DOM {
     }
 }
 
-method preceding(Mojo::DOM:D: Str:D $css) {
+method preceding(Mojo::DOM:D: Str $css?) {
     self!select(self!siblings(:tags-only)<before>, $css);
 }
 method preceding-nodes(Mojo::DOM:D:) {
@@ -170,7 +178,7 @@ method preceding-nodes(Mojo::DOM:D:) {
 
 method prepend(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
     if $!tree ~~ DocumentNode {
-        $!tree.parent.children.append:
+        $!tree.parent.children.prepend:
             _link($!tree.parent, Mojo::DOM::HTML::_parse($html).child-nodes);
     }
 
@@ -178,11 +186,18 @@ method prepend(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
 }
 method prepend-content(Mojo::DOM:D: Str:D $html) {
     if $!tree ~~ HasChildren {
-        $!tree.children.append:
+        $!tree.children.prepend:
             _link($!tree, Mojo::DOM::HTML::_parse($html).child-nodes);
     }
-
-    self;
+    elsif $!tree ~~ TextNode {
+        my $parent = $!tree.parent;
+        $parent.children.prepend:
+            _link($parent, Mojo::DOM::HTML::_parse($html, :$!xml).children);
+        $.parent;
+    }
+    else {
+        self;
+    }
 }
 
 method previous(Mojo::DOM:D:) {
@@ -204,7 +219,9 @@ method replace(Mojo::DOM:D: Str:D $html) {
     }
 }
 
-method root(Mojo::DOM:D:) { $!tree ~~ Root ?? self !! $!tree.root }
+method root(Mojo::DOM:D:) {
+    $!tree ~~ Root ?? self !! $!tree.root
+}
 
 method strip(Mojo::DOM:D:) {
     if $!tree ~~ Tag {
@@ -258,11 +275,11 @@ method val(Mojo::DOM:D:) returns Str {
 }
 
 method wrap(Mojo::DOM:D: Str:D $html) {
-    _wrap($!tree.parent, $!tree, $html);
+    _wrap($!tree.parent, ($!tree,), $html);
     self
 }
 method wrap-content(Mojo::DOM:D: Str:D $html) {
-    _wrap($!tree, $!tree.children, $html);
+    _wrap($!tree, $!tree.children, $html) if $!tree ~~ HasChildren;
     self
 }
 
@@ -289,14 +306,13 @@ method !replace($parent, $child, @nodes) {
 }
 
 method !select($collection, $selector?) {
-    my $list := do if $selector {
-        $collection.grep: { .matches($selector) };
+    my $list := $collection.map: { Mojo::DOM.new(:$^tree, :$!xml) };
+    if $selector {
+        $list.grep({ .matches($selector) });
     }
     else {
-        $collection;
-    };
-
-    $list.map: { Mojo::DOM.new(:$^tree, :$!xml) };
+        $list
+    }
 }
 
 method !siblings(:$tags-only = False, :$pos) {
@@ -322,10 +338,8 @@ my sub _wrap($parent, @nodes, $html) {
         $innermost = $next-inner;
     }
 
-    if $innermost !=== $wrapper {
-        push $innermost.children, _link($innermost, @nodes);
-        my $i = $parent.children.first({ $_ === any(|@nodes) }, :v) // *;
-        $parent.children.splice: $i, 0, _link($parent, @nodes);
-        $parent.children .= grep({ $_ !=== any(|@nodes) });
-    }
+    $innermost.children.append: _link($innermost, @nodes);
+    my $i = $parent.children.first({ $_ === any(|@nodes) }, :k) // *;
+    $parent.children.splice: $i, 0, _link($parent, $wrapper.children);
+    $parent.children .= grep({ $_ !=== any(|@nodes) });
 }

@@ -144,15 +144,16 @@ my class PseudoNth is Pseudo {
     has $.offset;
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
-        my $which = $!end ?? 'after' !! 'before';
-        my @siblings = $current.split-siblings(:tags-only){$which};
+        my @siblings = |$current.siblings(:tags-only, :including-self);
         @siblings .= grep({ .tag eq $current.tag }) if $!of-type;
+        my $pos = @siblings.first({ $_ === $current }, :k);
+        $pos = @siblings.end - $pos if $!end;
 
         if $!coeff != 0 {
-            (@siblings.elems + 1 - $!offset) %% $!coeff;
+            ($pos - $!offset) %% $!coeff
         }
         else {
-            @siblings.elems + 1 == $!offset
+            $pos == $!offset
         }
     }
 
@@ -369,13 +370,13 @@ class Compiler {
         my $first   = ~$<first-x>;
         my $of-type = $first.ends-with('-of-type');
 
-        make PseudoNth.new(:!end, :$of-type, :coeff(0), :offset(1));
+        make PseudoNth.new(:!end, :$of-type, :coeff(0), :offset(0));
     }
     method pseudo-class:sym<last>($/) {
-        my $last    = ~$<first-x>;
+        my $last    = ~$<last-x>;
         my $of-type = $last.ends-with('-of-type');
 
-        make PseudoNth.new(:!end, :$of-type, :coeff(-1), :offset(1));
+        make PseudoNth.new(:end, :$of-type, :coeff(0), :offset(0));
     }
     method pseudo-class:sym<only>($/) {
         make PseudoOnly.new(
@@ -390,9 +391,9 @@ class Compiler {
         }
     }
 
-    method equation:sym<even>($/)     { make [2, 2] }
-    method equation:sym<odd>($/)      { make [2, 1] }
-    method equation:sym<number>($/)   { make [0, (~$<number>).Int] }
+    method equation:sym<even>($/)     { make [2, 1] }
+    method equation:sym<odd>($/)      { make [2, 0] }
+    method equation:sym<number>($/)   { make [0, (~$<number>).Int - 1] }
     method equation:sym<function>($/) {
         my $coeff = do given ~$<coeff> {
             when '-' { -1 }

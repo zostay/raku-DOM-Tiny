@@ -3,19 +3,21 @@ use v6;
 
 use Mojo::DOM::Entities;
 
-grammar Tokenizer {
-    token TOP { <html-token>* }
+grammar XMLTokenizer {
+    token TOP { <ml-token>* }
 
-    token html-token { <markup> }
+    token ml-token { <markup> }
 
     proto token markup { * }
     token markup:sym<doctype> { :i '<!DOCTYPE' <.ws> <doctype> '>' }
     token markup:sym<comment> { '<!--' $<comment> = [ .*? ] '-->' }
     token markup:sym<cdata> { '<![CDATA[' $<cdata> = [ .*? ] ']]>' }
     token markup:sym<pi> { '<?' $<pi> = [ .*? ] '?>' }
-    token markup:sym<tag> { '<' \s* <end-mark>? \s* <tag-name> [ \s+ <attr> ** 0..32766 ]? <empty-tag-mark>? '>' }
+    token markup:sym<tag> {
+        '<' <.ws> <end-mark>? <.ws> <tag-name> <.ws>
+        [ <attr> <.ws> ]* <.ws> <empty-tag-mark>? '>'
+    }
     token markup:sym<text> { <-[ < ]>+ }
-    token markup:sym<runaway-lt> { '<' }
 
     rule doctype {
         <root-element>
@@ -29,7 +31,7 @@ grammar Tokenizer {
 
     token end-mark { '/' }
     token empty-tag-mark { '/' }
-    token tag-name { <-[ < > \s ]>+ }
+    token tag-name { <-[ < > \s / ]>+ }
 
     rule attr { <attr-key> [ '=' <attr-value> ]? }
     token attr-key { <-[ < > = \s \/ ]>+ }
@@ -40,8 +42,28 @@ grammar Tokenizer {
     }
 }
 
+grammar HTMLTokenizer is XMLTokenizer {
+    token tag-name {
+        <!before <.raw-tag> > <-[ < > \s / ]>+
+    }
+
+    token markup:sym<raw> {
+        '<' <.ws> $<start> = <raw-tag> <.ws>
+        [ <attr> <.ws> ]* <.ws> '>'
+        { $ = $<start> } # Why does this fix the regex?
+        $<raw-text> = [ .*? ]
+        '<' <.ws> '/' <.ws> "$<start>" <.ws> '>'
+    }
+
+    token raw-tag { :i [ script | style ] }
+    #token raw-tag { :i [ script | style ] }
+
+    token ml-token { <markup> || <runaway-lt> }
+    token runaway-lt { '<' }
+}
+
 # HTML elements that only contain raw text
-my %RAW = set <script stype>;
+my %RAW = set <script style>;
 
 # HTML elements that only contain raw text and entities
 my %RCDATA = set <title textarea>;
@@ -101,6 +123,7 @@ class Node is export {
 }
 
 class Root { ... }
+class Tag { ... }
 role HasChildren { ... }
 
 class DocumentNode is export is Node {
@@ -136,15 +159,21 @@ class DocumentNode is export is Node {
     }
 
     method split-siblings(DocumentNode:D: Bool :$tags-only) {
-        my @us = $!parent.child-nodes(:$tags-only);
+        my @us = $!parent.child-nodes;
         my $pos = @us.first({ $_ === self }, :k);
 
-        % = before => @us[0 .. $pos - 1],
-            after  => @us[$pos + 1 .. *],
+        my %result = before => @us[0 .. $pos - 1],
+                     after  => @us[$pos + 1 .. *];
+
+        if $tags-only {
+            %result<before> .= grep(Tag);
+            %result<after>  .= grep(Tag);
+        }
+
+        %result;
     }
 }
 
-class Tag { ... }
 class Text { ... }
 role TextNode { ... }
 
@@ -174,7 +203,7 @@ role HasChildren is export {
     method content(HasChildren:D:) is rw {
         my $tree = self;
         Proxy.new(
-            FETCH => method () { $tree.render },
+            FETCH => method () { $tree.render-children },
             STORE => method ($html) {
                 $tree.children = Mojo::DOM::HTML::_parse($html).children;
             },
@@ -307,7 +336,7 @@ class Root is export is Node does HasChildren {
 }
 
 class TreeMaker {
-    has $.xml;
+    has Bool $.xml = False;
 
     my sub _end($end, $xml, $current is rw) {
 
@@ -362,7 +391,7 @@ class TreeMaker {
         my $current = my $tree = Root.new;
 
         my $xml = $.xml // False;
-        for $<html-token>».made -> %markup {
+        for $<ml-token>».made -> %markup {
             given %markup<type> {
                 when Tag {
 
@@ -385,11 +414,23 @@ class TreeMaker {
                         _end($start, $xml, $current)
                             if (!$xml && %EMPTY ∋ $start)
                                 || (($xml || %BLOCK ∌ $start) && $closing);
-
-                        # FIXME Raw text elements (NYI)
-                        # CODE NEEDED SOMEWHERE...
                     }
 
+                }
+
+                when Raw {
+                    my $raw-tag = Tag.new(
+                        tag      => %markup<tag>,
+                        attrs    => %markup<attrs>,
+                        parent   => $current,
+                    );
+
+                    $raw-tag.children.push: Raw.new(
+                        text   => %markup<raw>,
+                        parent => $raw-tag,
+                    );
+
+                    $current.children.push: $raw-tag;
                 }
 
                 when Doctype {
@@ -439,8 +480,13 @@ class TreeMaker {
         make $tree;
     }
 
-    method html-token($/) {
-        make $<markup>.made;
+    method ml-token($/) {
+        if $<markup> {
+            make $<markup>.made;
+        }
+        else {
+            make $<runaway-lt>.made;
+        }
     }
 
     method markup:sym<text>($/) {
@@ -448,6 +494,15 @@ class TreeMaker {
             type => Text,
             text => ~$/,
         }
+    }
+
+    method markup:sym<raw>($/) {
+        make {
+            type  => Raw,
+            tag   => $.xml ?? ~$<start> !! (~$<start>).lc,
+            attrs => Hash.new($<attr>».made),
+            raw   => ~$<raw-text>,
+        };
     }
 
     method markup:sym<tag>($/) {
@@ -489,7 +544,7 @@ class TreeMaker {
         }
     }
 
-    method markup:sym<runaway-lt>($/) {
+    method runaway-lt($/) {
         make { type => Runaway }
     }
 
@@ -507,8 +562,9 @@ class TreeMaker {
     method attr-value($/) { make html-unescape ~$<raw-value> }
 }
 
-our sub _parse($html, :$xml) {
-    Mojo::DOM::HTML::Tokenizer.parse($html,
+our sub _parse($html, :$xml = False) {
+    my $grammar = $xml ?? XMLTokenizer !! HTMLTokenizer;
+    $grammar.parse($html,
         actions => Mojo::DOM::HTML::TreeMaker.new(:$xml),
     ).made;
 }
