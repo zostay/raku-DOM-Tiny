@@ -284,12 +284,13 @@ is "$dom", '<script>z<i><b>h:)g</b>a</i><b>fce</b>1<b>d</b><!--y--></script>',
 }
 
 # # XML nodes
-# $dom = Mojo::DOM58->new->xml(1)->parse('<b>test<image /></b>');
-# ok $dom->at('b')->child_nodes->first->xml, 'XML mode active';
-# ok $dom->at('b')->child_nodes->first->replace('<br>')->child_nodes->first->xml,
-#   'XML mode active';
-# is "$dom", '<b><br /><image /></b>', 'right result';
-#
+{
+my $dom = Mojo::DOM.new(:xml).parse('<b>test<image /></b>');
+ok $dom.at('b').child-nodes.first.xml, 'XML mode active';
+ok $dom.at('b').child-nodes.first.replace('<br>').child-nodes.first.xml,
+  'XML mode active';
+is "$dom", '<b><br /><image /></b>', 'right result';
+}
 # # Treating nodes as elements
 # $dom = Mojo::DOM58->new('foo<b>bar</b>baz');
 # is $dom->child_nodes->first->child_nodes->size,      0, 'no nodes';

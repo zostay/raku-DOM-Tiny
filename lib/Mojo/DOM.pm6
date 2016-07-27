@@ -27,12 +27,12 @@ method AT-KEY(Mojo::DOM:D: Str:D $k) is rw {
 }
 method hash(Mojo::DOM:D:) { self.attr }
 
-multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml = False) returns Mojo::DOM:D {
+multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
     my $tree = Mojo::DOM::HTML::_parse($html, :$xml);
     Mojo::DOM.new(:$tree, :$xml);
 }
 
-multi method parse(Mojo::DOM:D: Str:D $html, Bool :$xml = False) returns Mojo::DOM:D {
+multi method parse(Mojo::DOM:D: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
     $!xml  = $xml with $xml;
     $!tree = Mojo::DOM::HTML::_parse($html, :$!xml);
     self
