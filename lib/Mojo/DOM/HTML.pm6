@@ -293,14 +293,14 @@ class Raw is export is DocumentNode does TextNode {
 
 class Tag is export is DocumentNode does HasChildren {
     has Str $.tag is rw is required;
-    has %.attrs is rw;
+    has %.attr is rw;
 
     method render(:$xml) {
         # Start tag
         my $result = "<$!tag";
 
         # Attributes
-        $result ~= [~] gather for %!attrs.sort».kv -> ($key, $value) {
+        $result ~= [~] gather for %!attr.sort».kv -> ($key, $value) {
             with $value {
                 take qq{ $key="} ~ html-escape($value) ~ '"';
             }
@@ -359,7 +359,7 @@ class TreeMaker {
         return;
     }
 
-    my sub _start($start, %attrs, $xml, $current is rw) {
+    my sub _start($start, %attr, $xml, $current is rw) {
 
         # Autoclose optional HTML elements
         if !$xml && $current ~~ Root {
@@ -381,7 +381,7 @@ class TreeMaker {
         # New tag
         $current.children.push: my $new = Tag.new(
             tag    => $start,
-            attrs  => %attrs,
+            attr   => %attr,
             parent => $current,
         );
         $current = $new;
@@ -403,12 +403,12 @@ class TreeMaker {
                     # Start
                     else {
                         my $start   = %markup<tag>;
-                        my %attrs   = %markup<attrs>;
+                        my %attr    = %markup<attr>;
                         my $closing = %markup<empty>;
 
                         # "image" is an alias for "img"
                         $start = 'img' if !$xml && $start eq 'image';
-                        _start($start, %attrs, $xml, $current);
+                        _start($start, %attr, $xml, $current);
 
                         # Element without end tag (self-closing)
                         _end($start, $xml, $current)
@@ -421,7 +421,7 @@ class TreeMaker {
                 when Raw {
                     my $raw-tag = Tag.new(
                         tag      => %markup<tag>,
-                        attrs    => %markup<attrs>,
+                        attr     => %markup<attr>,
                         parent   => $current,
                     );
 
@@ -500,7 +500,7 @@ class TreeMaker {
         make {
             type  => Raw,
             tag   => $.xml ?? ~$<start> !! (~$<start>).lc,
-            attrs => Hash.new($<attr>».made),
+            attr  => Hash.new($<attr>».made),
             raw   => ~$<raw-text>,
         };
     }
@@ -510,7 +510,7 @@ class TreeMaker {
             type  => Tag,
             end   => ?$<end-mark>,
             tag   => $.xml ?? ~$<tag-name> !! (~$<tag-name>).lc,
-            attrs => Hash.new($<attr>».made),
+            attr  => Hash.new($<attr>».made),
             empty => ?$<empty-tag-mark>,
         }
     }

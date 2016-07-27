@@ -11,7 +11,7 @@ my package EXPORT::DEFAULT {
 }
 
 has Node $.tree = Root.new;
-has Bool $.xml;
+has Bool $.xml = False;
 
 multi method Bool(Mojo::DOM:U:) returns Bool:D { False }
 multi method Bool(Mojo::DOM:D:) returns Bool:D { True }
@@ -27,7 +27,7 @@ method AT-KEY(Mojo::DOM:D: Str:D $k) is rw {
 }
 method hash(Mojo::DOM:D:) { self.attr }
 
-multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
+multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml = False) returns Mojo::DOM:D {
     my $tree = Mojo::DOM::HTML::_parse($html, :$xml);
     Mojo::DOM.new(:$tree, :$xml);
 }
@@ -97,16 +97,18 @@ multi method attr(Mojo::DOM:D: Str:D $name, Str:D $value) returns Mojo::DOM:D {
 }
 
 multi method attr(Mojo::DOM:D: *%values) {
-    return $!tree !~~ Tag ?? {} !! $!tree.attrs unless %values;
+    return $!tree !~~ Tag ?? {} !! $!tree.attr unless %values;
     $.attr{ keys %values } = values %values;
     self;
 }
 
 method child-nodes(Mojo::DOM:D: Bool :$tags-only = False) {
+    return () unless $!tree ~~ HasChildren;
     self!select($!tree.child-nodes(:$tags-only));
 }
 
 method children(Mojo::DOM:D: Str $css?) {
+    return () unless $!tree ~~ HasChildren;
     self!select($!tree.child-nodes(:tags-only), $css);
 }
 
@@ -118,6 +120,7 @@ multi method content(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
 multi method content(Mojo::DOM:D:) is rw returns Str:D { $!tree.content }
 
 method descendant-nodes(Mojo::DOM:D:) {
+    return () unless $!tree ~~ HasChildren;
     self!select($!tree.descendant-nodes);
 }
 method find(Mojo::DOM:D: Str:D $css) {
@@ -140,12 +143,12 @@ method namespace(Mojo::DOM:D:) returns Str {
     for $!tree.ancestors -> $node {
         # Namespace for prefix
         with $ns {
-            for $node.attrs.kv -> $name, $value {
+            for $node.attr.kv -> $name, $value {
                 return $value if $name ~~ $ns;
             }
         }
-        orwith $node.attrs<xmlns> {
-            return $node.attrs<xmlns>;
+        orwith $node.attr<xmlns> {
+            return $node.attr<xmlns>;
         }
     }
 

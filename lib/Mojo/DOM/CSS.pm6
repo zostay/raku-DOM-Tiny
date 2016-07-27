@@ -82,7 +82,7 @@ my class HasAttr {
     }
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
-        $current.attrs ~~ $!name
+        $current.attr ~~ $!name
     }
 
     multi method ACCEPT(::?CLASS:D: $) { False }
@@ -108,8 +108,8 @@ my class AttrIs is HasAttr {
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
         return False unless callsame;
-        my $name = $current.attrs.keys.first($.name);
-        $current.attrs{ $name } ~~ $!value;
+        my $name = $current.attr.keys.first($.name);
+        $current.attr{ $name } ~~ $!value;
     }
 
     multi method ACCEPT(::?CLASS:D: $) { False }
@@ -182,7 +182,7 @@ my class PseudoEmpty is Pseudo {
 
 my class PseudoChecked is Pseudo {
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
-        $current.attrs ~~ / ^ [ checked | selected ] $ /
+        $current.attr ~~ / ^ [ checked | selected ] $ /
     }
 
     multi method ACCEPT(::?CLASS:D: $) { False }
@@ -417,6 +417,8 @@ method matches(Mojo::DOM::CSS:D: Str:D $css) returns Bool:D {
 }
 
 method select(Mojo::DOM::CSS:D: Str:D $css) {
+    return () unless $!tree ~~ HasChildren;
+
     my $matcher = _compile($css);
     my @search = $!tree.child-nodes(:tags-only);
     gather while @search.shift -> $current {

@@ -46,25 +46,25 @@ my $dom = Mojo::DOM.parse(
 cmp-ok $dom.tree, '~~', Root, 'right type';
 cmp-ok $dom.tree.children[0], '~~', Tag, 'right type';
 is $dom.tree.children[0].tag, 'foo', 'right tag';
-is-deeply $dom.tree.children[0].attrs, {}, 'empty attributes';
+is-deeply $dom.tree.children[0].attr, {}, 'empty attributes';
 cmp-ok $dom.tree.children[0].parent, '===', $dom.tree, 'right parent';
 cmp-ok $dom.tree.children[0].children[0], '~~', Tag, 'right type';
 is $dom.tree.children[0].children[0].tag, 'bar', 'right tag';
-is-deeply $dom.tree.children[0].children[0].attrs, {a => 'b<c'}, 'right attributes';
+is-deeply $dom.tree.children[0].children[0].attr, {a => 'b<c'}, 'right attributes';
 cmp-ok $dom.tree.children[0].children[0].parent, '===', $dom.tree.children[0], 'right parent';
 cmp-ok $dom.tree.children[0].children[0].children[0], '~~', Text, 'right type';
 is $dom.tree.children[0].children[0].children[0].text, 'ju',   'right text';
 cmp-ok $dom.tree.children[0].children[0].children[0].parent, '===', $dom.tree.children[0].children[0], 'right parent';
 cmp-ok $dom.tree.children[0].children[0].children[1], '~~', Tag, 'right type';
 is $dom.tree.children[0].children[0].children[1].tag, 'baz', 'right tag';
-is-deeply $dom.tree.children[0].children[0].children[1].attrs, {a23 => Nil}, 'right attributes';
+is-deeply $dom.tree.children[0].children[0].children[1].attr, {a23 => Nil}, 'right attributes';
 cmp-ok $dom.tree.children[0].children[0].children[1].parent, '===', $dom.tree.children[0].children[0], 'right parent';
 cmp-ok $dom.tree.children[0].children[0].children[1].children[0], '~~', Text, 'right type';
 is $dom.tree.children[0].children[0].children[1].children[0].text, 's',    'right text';
 cmp-ok $dom.tree.children[0].children[0].children[1].children[0].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
 cmp-ok $dom.tree.children[0].children[0].children[1].children[1], '~~', Tag,  'right type';
 is $dom.tree.children[0].children[0].children[1].children[1].tag, 'bazz', 'right tag';
-is-deeply $dom.tree.children[0].children[0].children[1].children[1].attrs, {}, 'empty attributes';
+is-deeply $dom.tree.children[0].children[0].children[1].children[1].attr, {}, 'empty attributes';
 cmp-ok $dom.tree.children[0].children[0].children[1].children[1].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
 cmp-ok $dom.tree.children[0].children[0].children[1].children[2], '~~', Text, 'right type';
 is $dom.tree.children[0].children[0].children[1].children[2].text, 't',    'right text';
@@ -291,21 +291,24 @@ ok $dom.at('b').child-nodes.first.replace('<br>').child-nodes.first.xml,
   'XML mode active';
 is "$dom", '<b><br /><image /></b>', 'right result';
 }
-# # Treating nodes as elements
-# $dom = Mojo::DOM58->new('foo<b>bar</b>baz');
-# is $dom->child_nodes->first->child_nodes->size,      0, 'no nodes';
-# is $dom->child_nodes->first->descendant_nodes->size, 0, 'no nodes';
-# is $dom->child_nodes->first->children->size,         0, 'no children';
-# is $dom->child_nodes->first->strip->parent, 'foo<b>bar</b>baz', 'no changes';
-# is $dom->child_nodes->first->at('b'), undef, 'no result';
-# is $dom->child_nodes->first->find('*')->size, 0, 'no results';
-# ok !$dom->child_nodes->first->matches('*'), 'no match';
-# is_deeply $dom->child_nodes->first->attr, {}, 'no attributes';
-# is $dom->child_nodes->first->namespace, undef, 'no namespace';
-# is $dom->child_nodes->first->tag,       undef, 'no tag';
-# is $dom->child_nodes->first->text,      '',    'no text';
-# is $dom->child_nodes->first->all_text,  '',    'no text';
-#
+
+# Treating nodes as elements
+{
+my $dom = Mojo::DOM.parse('foo<b>bar</b>baz');
+is $dom.child-nodes.first.child-nodes.elems,      0, 'no nodes';
+is $dom.child-nodes.first.descendant-nodes.elems, 0, 'no nodes';
+is $dom.child-nodes.first.children.elems,         0, 'no children';
+is $dom.child-nodes.first.strip.parent, 'foo<b>bar</b>baz', 'no changes';
+is $dom.child-nodes.first.at('b'), Nil, 'no result';
+is $dom.child-nodes.first.find('*').elems, 0, 'no results';
+ok !$dom.child-nodes.first.matches('*'), 'no match';
+is-deeply $dom.child-nodes.first.attr, {}, 'no attributes';
+is $dom.child-nodes.first.namespace, Nil, 'no namespace';
+is $dom.child-nodes.first.tag,       Nil, 'no tag';
+is $dom.child-nodes.first.text,      'foo',    'right text';
+is $dom.child-nodes.first.all-text,  'foo',    'right text';
+}
+
 # # Class and ID
 # $dom = Mojo::DOM58->new('<div id="id" class="class">a</div>');
 # is $dom->at('div#id.class')->text, 'a', 'right text';
