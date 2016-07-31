@@ -1,4 +1,4 @@
-unit module Mojo::DOM::Entities;
+unit module DOM::Tiny::Entities;
 use v6;
 
 # To generate a new HTML entity table run this command

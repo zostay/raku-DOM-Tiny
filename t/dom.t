@@ -2,20 +2,20 @@
 use v6;
 
 use Test;
-use Mojo::DOM;
+use DOM::Tiny;
 
 # Empty
-is(Mojo::DOM.new,                    '',    'right result');
-is(Mojo::DOM.parse(''),              '',    'right result');
-is(Mojo::DOM.new.parse(''),          '',    'right result');
-is(Mojo::DOM.new.at('p'),            Nil,   'no result');
-is(Mojo::DOM.new.append-content(''), '',    'right result');
-is(Mojo::DOM.new.all-text,           '',    'right result');
+is(DOM::Tiny.new,                    '',    'right result');
+is(DOM::Tiny.parse(''),              '',    'right result');
+is(DOM::Tiny.new.parse(''),          '',    'right result');
+is(DOM::Tiny.new.at('p'),            Nil,   'no result');
+is(DOM::Tiny.new.append-content(''), '',    'right result');
+is(DOM::Tiny.new.all-text,           '',    'right result');
 
 # Simple (basics)
 {
 my $dom
-  = Mojo::DOM.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
+  = DOM::Tiny.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
 is $dom.at('#b').text, 'B', 'right text';
 my $div := $dom.find('div[id]')».text;
 is-deeply $div, <A B>, 'found all div elements with id';
@@ -27,20 +27,20 @@ is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
 
 # Tap into method chain
 {
-my $dom = Mojo::DOM.parse('<div id="a">A</div><div id="b">B</div>');
+my $dom = DOM::Tiny.parse('<div id="a">A</div><div id="b">B</div>');
 is-deeply $dom.find('[id]')».attr('id'), <a b>,
   'right result';
 is { $dom.at('#b').remove; $dom }(), '<div id="a">A</div>',
   'right result';
 
 # Build tree from scratch
-is(Mojo::DOM.new.append-content('<p>').at('p').append-content('0').text,
+is(DOM::Tiny.new.append-content('<p>').at('p').append-content('0').text,
   '0', 'right text');
 }
 
 # Simple nesting with healing (tree structure)
 {
-my $dom = Mojo::DOM.parse(
+my $dom = DOM::Tiny.parse(
     q[<foo><bar a="b&lt;c">ju<baz a23>s<bazz />t</bar>works</foo>],
 );
 cmp-ok $dom.tree, '~~', Root, 'right type';
@@ -79,7 +79,7 @@ EOF
 
 # Select based on parent
 {
-my $dom = Mojo::DOM.parse(q:to/EOF/);
+my $dom = DOM::Tiny.parse(q:to/EOF/);
 <body>
   <div>test1</div>
   <div><div>test2</div></div>
@@ -96,7 +96,7 @@ is $dom.find('body > div > div').elems, 1, 'right number of elements';
 
 # A bit of everything (basic navigation)
 {
-my $dom = Mojo::DOM.new.parse(q:to/EOF/);
+my $dom = DOM::Tiny.new.parse(q:to/EOF/);
 <!doctype foo>
 <foo bar="ba&lt;z">
   test
@@ -168,7 +168,7 @@ ok !$dom.at('simple').ancestors.first.xml, 'XML mode not active';
 
 # Nodes
 {
-my $dom = Mojo::DOM.parse(
+my $dom = DOM::Tiny.parse(
   '<!DOCTYPE before><p>test<![CDATA[123]]><!-- 456 --></p><?after?>');
 is $dom.at('p').preceding-nodes.first.content, 'before', 'right content';
 is $dom.at('p').preceding-nodes.elems, 1, 'right number of nodes';
@@ -227,7 +227,7 @@ is "$dom", '<!DOCTYPE again><p><![CDATA[123]]><!-- 456 --></p>', 'right result';
 
 # Modify nodes
 {
-my $dom = Mojo::DOM.parse('<script>la<la>la</script>');
+my $dom = DOM::Tiny.parse('<script>la<la>la</script>');
 is $dom.at('script').type, Tag, 'right type';
 is $dom.at('script')[0].type,    Raw,      'right type';
 is $dom.at('script')[0].content, 'la<la>la', 'right content';
@@ -285,7 +285,7 @@ is "$dom", '<script>z<i><b>h:)g</b>a</i><b>fce</b>1<b>d</b><!--y--></script>',
 
 # # XML nodes
 {
-my $dom = Mojo::DOM.new(:xml).parse('<b>test<image /></b>');
+my $dom = DOM::Tiny.new(:xml).parse('<b>test<image /></b>');
 ok $dom.at('b').child-nodes.first.xml, 'XML mode active';
 ok $dom.at('b').child-nodes.first.replace('<br>').child-nodes.first.xml,
   'XML mode active';
@@ -294,7 +294,7 @@ is "$dom", '<b><br /><image /></b>', 'right result';
 
 # Treating nodes as elements
 {
-my $dom = Mojo::DOM.parse('foo<b>bar</b>baz');
+my $dom = DOM::Tiny.parse('foo<b>bar</b>baz');
 is $dom.child-nodes.first.child-nodes.elems,      0, 'no nodes';
 is $dom.child-nodes.first.descendant-nodes.elems, 0, 'no nodes';
 is $dom.child-nodes.first.children.elems,         0, 'no children';
@@ -310,11 +310,11 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 }
 
 # # Class and ID
-# $dom = Mojo::DOM58->new('<div id="id" class="class">a</div>');
+# $dom = DOM::Tiny->new('<div id="id" class="class">a</div>');
 # is $dom->at('div#id.class')->text, 'a', 'right text';
 #
 # # Deep nesting (parent combinator)
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head>
 #     <title>Foo</title>
@@ -354,13 +354,13 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is_deeply [$dom->ancestors->each],             [], 'no results';
 #
 # # Script tag
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <script charset="utf-8">alert('lalala');</script>
 # EOF
 # is $dom->at('script')->text, "alert('lalala');", 'right script content';
 #
 # # HTML5 (unquoted values)
-# $dom = Mojo::DOM58->new(
+# $dom = DOM::Tiny->new(
 #   '<div id = test foo ="bar" class=tset bar=/baz/ baz=//>works</div>');
 # is $dom->at('#test')->text,                'works', 'right text';
 # is $dom->at('div')->text,                  'works', 'right text';
@@ -373,7 +373,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('[baz=//]')->text,    'works', 'right text';
 #
 # # HTML1 (single quotes, uppercase tags and whitespace in attributes)
-# $dom = Mojo::DOM58->new(q{<DIV id = 'test' foo ='bar' class= "tset">works</DIV>});
+# $dom = DOM::Tiny->new(q{<DIV id = 'test' foo ='bar' class= "tset">works</DIV>});
 # is $dom->at('#test')->text,       'works', 'right text';
 # is $dom->at('div')->text,         'works', 'right text';
 # is $dom->at('[foo="bar"]')->text, 'works', 'right text';
@@ -383,7 +383,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('.tset')->text, 'works', 'right text';
 #
 # # Already decoded Unicode snowman and quotes in selector
-# $dom = Mojo::DOM58->new('<div id="snow&apos;m&quot;an">â˜ƒ</div>');
+# $dom = DOM::Tiny->new('<div id="snow&apos;m&quot;an">â˜ƒ</div>');
 # is $dom->at('[id="snow\'m\"an"]')->text,      'â˜ƒ', 'right text';
 # is $dom->at('[id="snow\'m\22 an"]')->text,    'â˜ƒ', 'right text';
 # is $dom->at('[id="snow\'m\000022an"]')->text, 'â˜ƒ', 'right text';
@@ -397,7 +397,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # # Unicode and escaped selectors
 # my $html
 #   = '<html><div id="â˜ƒx">Snowman</div><div class="x â™¥">Heart</div></html>';
-# $dom = Mojo::DOM58->new($html);
+# $dom = DOM::Tiny->new($html);
 # is $dom->at("#\\\n\\002603x")->text,                  'Snowman', 'right text';
 # is $dom->at('#\\2603 x')->text,                       'Snowman', 'right text';
 # is $dom->at("#\\\n\\2603 x")->text,                   'Snowman', 'right text';
@@ -467,23 +467,23 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->content,   $html, 'right result';
 #
 # # Looks remotely like HTML
-# $dom = Mojo::DOM58->new(
+# $dom = DOM::Tiny->new(
 #   '<!DOCTYPE H "-/W/D HT 4/E">â˜ƒ<title class=test>â™¥</title>â˜ƒ');
 # is $dom->at('title')->text, 'â™¥', 'right text';
 # is $dom->at('*')->text,     'â™¥', 'right text';
 # is $dom->at('.test')->text, 'â™¥', 'right text';
 #
 # # Replace elements
-# $dom = Mojo::DOM58->new('<div>foo<p>lalala</p>bar</div>');
+# $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
 # is $dom->at('p')->replace('<foo>bar</foo>'), '<div>foo<foo>bar</foo>bar</div>',
 #   'right result';
 # is "$dom", '<div>foo<foo>bar</foo>bar</div>', 'right result';
-# $dom->at('foo')->replace(Mojo::DOM58->new('text'));
+# $dom->at('foo')->replace(DOM::Tiny->new('text'));
 # is "$dom", '<div>footextbar</div>', 'right result';
-# $dom = Mojo::DOM58->new('<div>foo</div><div>bar</div>');
+# $dom = DOM::Tiny->new('<div>foo</div><div>bar</div>');
 # $dom->find('div')->each(sub { shift->replace('<p>test</p>') });
 # is "$dom", '<p>test</p><p>test</p>', 'right result';
-# $dom = Mojo::DOM58->new('<div>foo<p>lalala</p>bar</div>');
+# $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
 # is $dom->replace('â™¥'), 'â™¥', 'right result';
 # is "$dom", 'â™¥', 'right result';
 # $dom->replace('<div>foo<p>lalala</p>bar</div>');
@@ -496,10 +496,10 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is "$dom", '<div>foo<p>lalala</p>bar</div>', 'right result';
 # $dom->find('p')->map(replace => '');
 # is "$dom", '<div>foobar</div>', 'right result';
-# $dom = Mojo::DOM58->new('<div>â™¥</div>');
+# $dom = DOM::Tiny->new('<div>â™¥</div>');
 # $dom->at('div')->content('â˜ƒ');
 # is "$dom", '<div>â˜ƒ</div>', 'right result';
-# $dom = Mojo::DOM58->new('<div>â™¥</div>');
+# $dom = DOM::Tiny->new('<div>â™¥</div>');
 # $dom->at('div')->content("\x{2603}");
 # is $dom->to_string, '<div>â˜ƒ</div>', 'right result';
 # is $dom->at('div')->replace('<p>â™¥</p>')->root, '<p>â™¥</p>', 'right result';
@@ -518,26 +518,26 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find(':not(div):not(i):not(u)')->map('strip')->first->root,
 #   'A<div>BCD<i><u>E</u></i>FG<div>H</div></div>I', 'right result';
 # is $dom->at('i')->to_string, '<i><u>E</u></i>', 'right result';
-# $dom = Mojo::DOM58->new('<div><div>A</div><div>B</div>C</div>');
+# $dom = DOM::Tiny->new('<div><div>A</div><div>B</div>C</div>');
 # is $dom->at('div')->at('div')->text, 'A', 'right text';
 # $dom->at('div')->find('div')->map('strip');
 # is "$dom", '<div>ABC</div>', 'right result';
 #
 # # Replace element content
-# $dom = Mojo::DOM58->new('<div>foo<p>lalala</p>bar</div>');
+# $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
 # is $dom->at('p')->content('bar'), '<p>bar</p>', 'right result';
 # is "$dom", '<div>foo<p>bar</p>bar</div>', 'right result';
-# $dom->at('p')->content(Mojo::DOM58->new('text'));
+# $dom->at('p')->content(DOM::Tiny->new('text'));
 # is "$dom", '<div>foo<p>text</p>bar</div>', 'right result';
-# $dom = Mojo::DOM58->new('<div>foo</div><div>bar</div>');
+# $dom = DOM::Tiny->new('<div>foo</div><div>bar</div>');
 # $dom->find('div')->each(sub { shift->content('<p>test</p>') });
 # is "$dom", '<div><p>test</p></div><div><p>test</p></div>', 'right result';
 # $dom->find('p')->each(sub { shift->content('') });
 # is "$dom", '<div><p></p></div><div><p></p></div>', 'right result';
-# $dom = Mojo::DOM58->new('<div><p id="â˜ƒ" /></div>');
+# $dom = DOM::Tiny->new('<div><p id="â˜ƒ" /></div>');
 # $dom->at('#â˜ƒ')->content('â™¥');
 # is "$dom", '<div><p id="â˜ƒ">â™¥</p></div>', 'right result';
-# $dom = Mojo::DOM58->new('<div>foo<p>lalala</p>bar</div>');
+# $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
 # $dom->content('â™¥');
 # is "$dom", 'â™¥', 'right result';
 # is $dom->content('<div>foo<p>lalala</p>bar</div>'),
@@ -550,7 +550,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('p')->content(''), '<p></p>', 'right result';
 #
 # # Mixed search and tree walk
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #   <tr>
 #     <td>text1</td>
@@ -571,14 +571,14 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $data[4], undef,   'no tag';
 #
 # # RSS
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0" encoding="UTF-8"?>
 # <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
 #   <channel>
 #     <title>Test Blog</title>
 #     <link>http://blog.example.com</link>
 #     <description>lalala</description>
-#     <generator>Mojo::DOM58</generator>
+#     <generator>DOM::Tiny</generator>
 #     <item>
 #       <pubDate>Mon, 12 Jul 2010 20:42:00</pubDate>
 #       <title>Works!</title>
@@ -616,7 +616,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # ok $dom->at('title')->ancestors->first->xml, 'XML mode active';
 #
 # # Namespace
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0"?>
 # <bk:book xmlns='uri:default-ns'
 #          xmlns:bk='uri:book-ns'
@@ -661,7 +661,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'element did not match';
 #
 # # Dots
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0"?>
 # <foo xmlns:foo.bar="uri:first">
 #   <bar xmlns:fooxbar="uri:second">
@@ -679,7 +679,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('b\.z'),     undef, 'no result';
 #
 # # Yadis
-# $dom = Mojo::DOM58->new(<<'EOF');
+# $dom = DOM::Tiny->new(<<'EOF');
 # <?xml version="1.0" encoding="UTF-8"?>
 # <XRDS xmlns="xri://$xrds">
 #   <XRD xmlns="xri://$xrd*($v*2.0)">
@@ -725,7 +725,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   </XRD>
 # </xrds:XRDS>
 # EOF
-# $dom = Mojo::DOM58->new($yadis);
+# $dom = DOM::Tiny->new($yadis);
 # ok $dom->xml, 'XML mode detected';
 # is $dom->at('XRDS')->namespace, 'xri://$xrds',         'right namespace';
 # is $dom->at('XRD')->namespace,  'xri://$xrd*($v*2.0)', 'right namespace';
@@ -760,26 +760,26 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is "$dom", $yadis, 'successful roundtrip';
 #
 # # Result and iterator order
-# $dom = Mojo::DOM58->new('<a><b>1</b></a><b>2</b><b>3</b>');
+# $dom = DOM::Tiny->new('<a><b>1</b></a><b>2</b><b>3</b>');
 # my @numbers;
 # $dom->find('b')->each(sub { push @numbers, pop, shift->text });
 # is_deeply \@numbers, [1, 1, 2, 2, 3, 3], 'right order';
 #
 # # Attributes on multiple lines
-# $dom = Mojo::DOM58->new("<div test=23 id='a' \n class='x' foo=bar />");
+# $dom = DOM::Tiny->new("<div test=23 id='a' \n class='x' foo=bar />");
 # is $dom->at('div.x')->attr('test'),        23,  'right attribute';
 # is $dom->at('[foo="bar"]')->attr('class'), 'x', 'right attribute';
 # is $dom->at('div')->attr(baz => undef)->root->to_string,
 #   '<div baz class="x" foo="bar" id="a" test="23"></div>', 'right result';
 #
 # # Markup characters in attribute values
-# $dom = Mojo::DOM58->new(qq{<div id="<a>" \n test='='>Test<div id='><' /></div>});
+# $dom = DOM::Tiny->new(qq{<div id="<a>" \n test='='>Test<div id='><' /></div>});
 # is $dom->at('div[id="<a>"]')->attr->{test}, '=', 'right attribute';
 # is $dom->at('[id="<a>"]')->text, 'Test', 'right text';
 # is $dom->at('[id="><"]')->attr->{id}, '><', 'right attribute';
 #
 # # Empty attributes
-# $dom = Mojo::DOM58->new(qq{<div test="" test2='' />});
+# $dom = DOM::Tiny->new(qq{<div test="" test2='' />});
 # is $dom->at('div')->attr->{test},  '', 'empty attribute value';
 # is $dom->at('div')->attr->{test2}, '', 'empty attribute value';
 # is $dom->at('[test]')->tag,  'div', 'right tag';
@@ -790,20 +790,20 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('[test3=""]'), undef, 'no result';
 #
 # # Multi-line attribute
-# $dom = Mojo::DOM58->new(qq{<div class="line1\nline2" />});
+# $dom = DOM::Tiny->new(qq{<div class="line1\nline2" />});
 # is $dom->at('div')->attr->{class}, "line1\nline2", 'multi-line attribute value';
 # is $dom->at('.line1')->tag, 'div', 'right tag';
 # is $dom->at('.line2')->tag, 'div', 'right tag';
 # is $dom->at('.line3'), undef, 'no result';
 #
 # # Whitespaces before closing bracket
-# $dom = Mojo::DOM58->new('<div >content</div>');
+# $dom = DOM::Tiny->new('<div >content</div>');
 # ok $dom->at('div'), 'tag found';
 # is $dom->at('div')->text,    'content', 'right text';
 # is $dom->at('div')->content, 'content', 'right text';
 #
 # # Class with hyphen
-# $dom = Mojo::DOM58->new('<div class="a">A</div><div class="a-1">A1</div>');
+# $dom = DOM::Tiny->new('<div class="a">A</div><div class="a-1">A1</div>');
 # @div = ();
 # $dom->find('.a')->each(sub { push @div, shift->text });
 # is_deeply \@div, ['A'], 'found first element only';
@@ -812,24 +812,24 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is_deeply \@div, ['A1'], 'found last element only';
 #
 # # Defined but false text
-# $dom = Mojo::DOM58->new(
+# $dom = DOM::Tiny->new(
 #   '<div><div id="a">A</div><div id="b">B</div></div><div id="0">0</div>');
 # @div = ();
 # $dom->find('div[id]')->each(sub { push @div, shift->text });
 # is_deeply \@div, [qw(A B 0)], 'found all div elements with id';
 #
 # # Empty tags
-# $dom = Mojo::DOM58->new('<hr /><br/><br id="br"/><br />');
+# $dom = DOM::Tiny->new('<hr /><br/><br id="br"/><br />');
 # is "$dom", '<hr><br><br id="br"><br>', 'right result';
 # is $dom->at('br')->content, '', 'empty result';
 #
 # # Inner XML
-# $dom = Mojo::DOM58->new('<a>xxx<x>x</x>xxx</a>');
+# $dom = DOM::Tiny->new('<a>xxx<x>x</x>xxx</a>');
 # is $dom->at('a')->content, 'xxx<x>x</x>xxx', 'right result';
 # is $dom->content, '<a>xxx<x>x</x>xxx</a>', 'right result';
 #
 # # Multiple selectors
-# $dom = Mojo::DOM58->new(
+# $dom = DOM::Tiny->new(
 #   '<div id="a">A</div><div id="b">B</div><div id="c">C</div><p>D</p>');
 # @div = ();
 # $dom->find('p, div')->each(sub { push @div, shift->text });
@@ -843,7 +843,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # @div = ();
 # $dom->find('div[id="a"], div[id="c"]')->each(sub { push @div, shift->text });
 # is_deeply \@div, [qw(A C)], 'found all div elements with the right ids';
-# $dom = Mojo::DOM58->new(
+# $dom = DOM::Tiny->new(
 #   '<div id="â˜ƒ">A</div><div id="b">B</div><div id="â™¥x">C</div>');
 # @div = ();
 # $dom->find('#â˜ƒ, #â™¥x')->each(sub { push @div, shift->text });
@@ -857,7 +857,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is_deeply \@div, [qw(A C)], 'found all div elements with the right ids';
 #
 # # Multiple attributes
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <div foo="bar" bar="baz">A</div>
 # <div foo="bar">B</div>
 # <div foo="bar" bar="baz">C</div>
@@ -875,7 +875,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('[foo="bar"]')->next->next->next->next, undef, 'no next sibling';
 #
 # # Pseudo-classes
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <form action="/foo">
 #     <input type="text" name="user" value="test" />
 #     <input type="checkbox" checked="checked" name="groovy">
@@ -926,7 +926,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('p:empty')->attr->{id}, 'no_content', 'right attribute';
 #
 # # More pseudo-classes
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <ul>
 #     <li>A</li>
 #     <li>B</li>
@@ -1082,7 +1082,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('li:whatever(whatever)')->size,  0, 'no results';
 #
 # # Even more pseudo-classes
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <ul>
 #     <li>A</li>
 #     <p>B</p>
@@ -1205,7 +1205,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is_deeply \@e, [qw(J K)], 'found only child';
 #
 # # Sibling combinator
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <ul>
 #     <li>A</li>
 #     <p>B</p>
@@ -1256,7 +1256,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('#â™¥ ~ *:nth-last-child(2)')->text,        'F', 'right text';
 #
 # # Adding nodes
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <ul>
 #     <li>A</li>
 #     <p>B</p>
@@ -1335,7 +1335,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # EOF
 #
 # # Optional "head" and "body" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head>
 #     <title>foo</title>
@@ -1345,7 +1345,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('html > body')->text,         'bar', 'right text';
 #
 # # Optional "li" tag
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <ul>
 #   <li>
 #     <ol>
@@ -1368,7 +1368,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('ul > li')->[5]->text,           'E', 'right text';
 #
 # # Optional "p" tag
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <div>
 #   <p>A</p>
 #   <P>B
@@ -1391,7 +1391,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('div > div')->text, 'X', 'right text';
 #
 # # Optional "dt" and "dd" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <dl>
 #   <dt>A</dt>
 #   <DD>B
@@ -1409,7 +1409,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('dl > dd')->[2]->text, 'F', 'right text';
 #
 # # Optional "rp" and "rt" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <ruby>
 #   <rp>A</rp>
 #   <RT>B
@@ -1427,7 +1427,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('ruby > rt')->[2]->text, 'F', 'right text';
 #
 # # Optional "optgroup" and "option" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <div>
 #   <optgroup>A
 #     <option id="foo">B
@@ -1449,7 +1449,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('div > optgroup > option')->[4]->text, 'H', 'right text';
 #
 # # Optional "colgroup" tag
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #   <col id=morefail>
 #   <col id=fail>
@@ -1470,7 +1470,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'right attribute';
 #
 # # Optional "thead", "tbody", "tfoot", "tr", "th" and "td" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #   <thead>
 #     <tr>
@@ -1490,7 +1490,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('table > tfoot > tr > td')->text, 'C', 'right text';
 #
 # # Optional "colgroup", "thead", "tbody", "tr", "th" and "td" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #   <col id=morefail>
 #   <col id=fail>
@@ -1527,7 +1527,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'right text';
 #
 # # Optional "colgroup", "tbody", "tr", "th" and "td" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #   <colgroup>
 #     <col id=foo />
@@ -1549,7 +1549,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('table > tbody > tr > td')->text, 'B', 'right text';
 #
 # # Optional "tr" and "td" tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #     <tr>
 #       <td>A
@@ -1567,7 +1567,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('table > tr > td')->[3]->text, 'D', 'right text';
 #
 # # Real world table
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head>
 #     <title>Real World!</title>
@@ -1610,7 +1610,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'right results';
 #
 # # Real world list
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head>
 #     <title>Real World!</title>
@@ -1648,7 +1648,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('body > ul > li > p')->[2]->all_text, '',            'no text';
 #
 # # Advanced whitespace trimming (punctuation)
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head>
 #     <title>Real World!</title>
@@ -1665,7 +1665,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('body > div')->[2]->text,     'foo baz!',            'right text';
 #
 # # Real world JavaScript and CSS
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head>
 #     <style test=works>#style { foo: style('<test>'); }</style>
@@ -1686,7 +1686,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   "if (b > c) { alert('&<ohoh>') }", 'right text';
 #
 # # More real world JavaScript
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <!DOCTYPE html>
 # <html>
 #   <head>
@@ -1709,7 +1709,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('html > body')->text, 'Bar', 'right text';
 #
 # # Even more real world JavaScript
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <!DOCTYPE html>
 # <html>
 #   <head>
@@ -1732,7 +1732,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('html > body')->text, 'Bar', 'right text';
 #
 # # Inline DTD
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0"?>
 # <!-- This is a Test! -->
 # <!DOCTYPE root [
@@ -1750,7 +1750,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   <!ATTLIST root att CDATA #REQUIRED>
 # ]', 'right doctype';
 # is $dom->at('root')->text, '<hello>world</hello>', 'right text';
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <!doctype book
 # SYSTEM "usr.dtd"
 # [
@@ -1765,7 +1765,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # ]', 'right doctype';
 # ok !$dom->xml, 'XML mode not detected';
 # is $dom->at('foo'), '<foo></foo>', 'right element';
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0" encoding = 'utf-8'?>
 # <!DOCTYPE foo [
 #   <!ELEMENT foo ANY>
@@ -1784,7 +1784,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # ]  ', 'right doctype';
 # is $dom->at('foo')->attr->{'xml:lang'}, 'de', 'right attribute';
 # is $dom->at('foo')->text, 'Check!', 'right text';
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <!DOCTYPE TESTSUITE PUBLIC "my.dtd" 'mhhh' [
 #   <!ELEMENT foo ANY>
 #   <!ATTLIST foo bar ENTITY 'true'>
@@ -1807,7 +1807,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('foo')->attr('bar'), 'false', 'right attribute';
 #
 # # Broken "font" block and useless end tags
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head><title>Test</title></head>
 #   <body>
@@ -1822,7 +1822,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('html body table tr td > font')->text, 'test', 'right text';
 #
 # # Different broken "font" block
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head><title>Test</title></head>
 #   <body>
@@ -1842,7 +1842,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'right text';
 #
 # # Broken "font" and "div" blocks
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head><title>Test</title></head>
 #   <body>
@@ -1858,7 +1858,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('html body font > div > div')->text, 'test2', 'right text';
 #
 # # Broken "div" blocks
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head><title>Test</title></head>
 #   <body>
@@ -1874,7 +1874,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('html body div table tr td > div')->text, 'test', 'right text';
 #
 # # And another broken "font" block
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head><title>Test</title></head>
 #   <body>
@@ -1917,7 +1917,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # EOF
 #
 # # A collection of wonderful screwups
-# $dom = Mojo::DOM58->new(<<'EOF');
+# $dom = DOM::Tiny->new(<<'EOF');
 # <!DOCTYPE html>
 # <html lang="en">
 #   <head><title>Wonderful Screwups</title></head>
@@ -1943,11 +1943,11 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('#screw-up .ewww > a > img')->size, 2, 'right number of elements';
 #
 # # Broken "br" tag
-# $dom = Mojo::DOM58->new('<br< abc abc abc abc abc abc abc abc<p>Test</p>');
+# $dom = DOM::Tiny->new('<br< abc abc abc abc abc abc abc abc<p>Test</p>');
 # is $dom->at('p')->text, 'Test', 'right text';
 #
 # # Modifying an XML document
-# $dom = Mojo::DOM58->new(<<'EOF');
+# $dom = DOM::Tiny->new(<<'EOF');
 # <?xml version='1.0' encoding='UTF-8'?>
 # <XMLTest />
 # EOF
@@ -1966,15 +1966,15 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom, '<XMLTest2 foo="foo" /><XMLTest3 just="works" />', 'right result';
 #
 # # Ensure HTML semantics
-# ok !Mojo::DOM58->new->xml(undef)->parse('<?xml version="1.0"?>')->xml,
+# ok !DOM::Tiny->new->xml(undef)->parse('<?xml version="1.0"?>')->xml,
 #   'XML mode not detected';
 # $dom
-#   = Mojo::DOM58->new->xml(0)->parse('<?xml version="1.0"?><br><div>Test</div>');
+#   = DOM::Tiny->new->xml(0)->parse('<?xml version="1.0"?><br><div>Test</div>');
 # is $dom->at('div:root')->text, 'Test', 'right text';
 #
 # # Ensure XML semantics
-# ok !!Mojo::DOM58->new->xml(1)->parse('<foo />')->xml, 'XML mode active';
-# $dom = Mojo::DOM58->new(<<'EOF');
+# ok !!DOM::Tiny->new->xml(1)->parse('<foo />')->xml, 'XML mode active';
+# $dom = DOM::Tiny->new(<<'EOF');
 # <?xml version='1.0' encoding='UTF-8'?>
 # <script>
 #   <table>
@@ -1994,7 +1994,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('table > td > tr > thead')->size, 2, 'right number of elements';
 #
 # # Ensure XML semantics again
-# $dom = Mojo::DOM58->new->xml(1)->parse(<<'EOF');
+# $dom = DOM::Tiny->new->xml(1)->parse(<<'EOF');
 # <table>
 #   <td>
 #     <tr><thead>foo<thead></tr>
@@ -2010,7 +2010,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('table > td > tr > thead')->size, 2, 'right number of elements';
 #
 # # Nested tables
-# $dom = Mojo::DOM58->new(<<'EOF');
+# $dom = DOM::Tiny->new(<<'EOF');
 # <table id="foo">
 #   <tr>
 #     <td>
@@ -2064,7 +2064,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('b')->at('c > b > a'), undef, 'no result';
 #
 # # Direct hash access to attributes in XML mode
-# $dom = Mojo::DOM58->new->xml(1)->parse(<<EOF);
+# $dom = DOM::Tiny->new->xml(1)->parse(<<EOF);
 # <a id="one">
 #   <B class="two" test>
 #     foo
@@ -2096,7 +2096,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('#nothing')->join, '', 'no result';
 #
 # # Direct hash access to attributes in HTML mode
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <a id="one">
 #   <B class="two" test>
 #     foo
@@ -2128,7 +2128,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('#nothing')->join, '', 'no result';
 #
 # # Append and prepend content
-# $dom = Mojo::DOM58->new('<a><b>Test<c /></b></a>');
+# $dom = DOM::Tiny->new('<a><b>Test<c /></b></a>');
 # $dom->at('b')->append_content('<d />');
 # is $dom->children->[0]->tag, 'a', 'right tag';
 # is $dom->all_text, 'Test', 'right text';
@@ -2139,7 +2139,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->all_text, 'DOM Test', 'right text';
 #
 # # Wrap elements
-# $dom = Mojo::DOM58->new('<a>Test</a>');
+# $dom = DOM::Tiny->new('<a>Test</a>');
 # is "$dom", '<a>Test</a>', 'right result';
 # is $dom->wrap('<b></b>')->type, 'root', 'right type';
 # is "$dom", '<a>Test</a>', 'no changes';
@@ -2154,7 +2154,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is "$dom", '<b>C<c><d>D<a>Test</a></d><e>E</e></c>F</b>', 'right result';
 #
 # # Wrap content
-# $dom = Mojo::DOM58->new('<a>Test</a>');
+# $dom = DOM::Tiny->new('<a>Test</a>');
 # is $dom->at('a')->wrap_content('A')->tag, 'a', 'right tag';
 # is "$dom", '<a>Test</a>', 'right result';
 # is $dom->wrap_content('<b></b>')->type, 'root', 'right type';
@@ -2168,7 +2168,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'right result';
 #
 # # Broken "div" in "td"
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <table>
 #   <tr>
 #     <td><div id="A"></td>
@@ -2190,7 +2190,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # EOF
 #
 # # Preformatted text
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <div>
 #   looks
 #   <pre><code>like
@@ -2222,7 +2222,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #   'right text';
 #
 # # Form values
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <form action="/foo">
 #   <p>Test</p>
 #   <input type="text" name="a" value="A" />
@@ -2275,7 +2275,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('input[name=u]')->val, undef, 'no value';
 #
 # # PoCo example with whitespace sensitive text
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0" encoding="UTF-8"?>
 # <response>
 #   <entry>
@@ -2320,7 +2320,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('entry')->size, 2, 'right number of elements';
 #
 # # Find attribute with hyphen in name and value
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <html>
 #   <head><meta http-equiv="content-type" content="text/html"></head>
 # </html>
@@ -2338,7 +2338,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('head > [http-equiv$="-type"]')->[1], undef, 'no result';
 #
 # # Find "0" attribute value
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <a accesskey="0">Zero</a>
 # <a accesskey="1">O&gTn&gte</a>
 # EOF
@@ -2368,7 +2368,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at('a[accesskey*="."]'), undef, 'no result';
 #
 # # Empty attribute value
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <foo bar=>
 #   test
 # </foo>
@@ -2392,7 +2392,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # EOF
 #
 # # Case-insensitive attribute values
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <p class="foo">A</p>
 # <p class="foo bAr">B</p>
 # <p class="FOO">C</p>
@@ -2416,7 +2416,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('[class$=O i]')->map('text')->join(','), 'A,C',   'right result';
 #
 # # Nested description lists
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <dl>
 #   <dt>A</dt>
 #   <DD>
@@ -2432,7 +2432,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->find('dl > dt')->[0]->text,           'A', 'right text';
 #
 # # Nested lists
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <div>
 #   <ul>
 #     <li>
@@ -2455,7 +2455,7 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 #
 # # Unusual order
 # $dom
-#   = Mojo::DOM58->new('<a href="http://example.com" id="foo" class="bar">Ok!</a>');
+#   = DOM::Tiny->new('<a href="http://example.com" id="foo" class="bar">Ok!</a>');
 # is $dom->at('a:not([href$=foo])[href^=h]')->text, 'Ok!', 'right text';
 # is $dom->at('a:not([href$=example.com])[href^=h]'), undef, 'no result';
 # is $dom->at('a[href^=h]#foo.bar')->text, 'Ok!', 'right text';
@@ -2470,32 +2470,32 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->at(':not([href^=h]#foo#foo)'), undef, 'no result';
 #
 # # Slash between attributes
-# $dom = Mojo::DOM58->new('<input /type=checkbox / value="/a/" checked/><br/>');
+# $dom = DOM::Tiny->new('<input /type=checkbox / value="/a/" checked/><br/>');
 # is_deeply $dom->at('input')->attr,
 #   {type => 'checkbox', value => '/a/', checked => undef}, 'right attributes';
 # is "$dom", '<input checked type="checkbox" value="/a/"><br>', 'right result';
 #
 # # Dot and hash in class and id attributes
-# $dom = Mojo::DOM58->new('<p class="a#b.c">A</p><p id="a#b.c">B</p>');
+# $dom = DOM::Tiny->new('<p class="a#b.c">A</p><p id="a#b.c">B</p>');
 # is $dom->at('p.a\#b\.c')->text,       'A', 'right text';
 # is $dom->at(':not(p.a\#b\.c)')->text, 'B', 'right text';
 # is $dom->at('p#a\#b\.c')->text,       'B', 'right text';
 # is $dom->at(':not(p#a\#b\.c)')->text, 'A', 'right text';
 #
 # # Extra whitespace
-# $dom = Mojo::DOM58->new('< span>a< /span><b >b</b><span >c</ span>');
+# $dom = DOM::Tiny->new('< span>a< /span><b >b</b><span >c</ span>');
 # is $dom->at('span')->text,     'a', 'right text';
 # is $dom->at('span + b')->text, 'b', 'right text';
 # is $dom->at('b + span')->text, 'c', 'right text';
 # is "$dom", '<span>a</span><b>b</b><span>c</span>', 'right result';
 #
 # # Selectors with leading and trailing whitespace
-# $dom = Mojo::DOM58->new('<div id=foo><b>works</b></div>');
+# $dom = DOM::Tiny->new('<div id=foo><b>works</b></div>');
 # is $dom->at(' div   b ')->text,          'works', 'right text';
 # is $dom->at('  :not(  #foo  )  ')->text, 'works', 'right text';
 #
 # # "0"
-# $dom = Mojo::DOM58->new('0');
+# $dom = DOM::Tiny->new('0');
 # is "$dom", '0', 'right result';
 # $dom->append_content('â˜ƒ');
 # is "$dom", '0â˜ƒ', 'right result';
@@ -2505,31 +2505,31 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # is $dom->parse('<?0?>'),         '<?0?>',         'successful roundtrip';
 #
 # # Not self-closing
-# $dom = Mojo::DOM58->new('<div />< div ><pre />test</div >123');
+# $dom = DOM::Tiny->new('<div />< div ><pre />test</div >123');
 # is $dom->at('div > div > pre')->text, 'test', 'right text';
 # is "$dom", '<div><div><pre>test</pre></div>123</div>', 'right result';
-# $dom = Mojo::DOM58->new('<p /><svg><circle /><circle /></svg>');
+# $dom = DOM::Tiny->new('<p /><svg><circle /><circle /></svg>');
 # is $dom->find('p > svg > circle')->size, 2, 'two circles';
 # is "$dom", '<p><svg><circle></circle><circle></circle></svg></p>',
 #   'right result';
 #
 # # "image"
-# $dom = Mojo::DOM58->new('<image src="foo.png">test');
+# $dom = DOM::Tiny->new('<image src="foo.png">test');
 # is $dom->at('img')->{src}, 'foo.png', 'right attribute';
 # is "$dom", '<img src="foo.png">test', 'right result';
 #
 # # "title"
-# $dom = Mojo::DOM58->new('<title> <p>test&lt;</title>');
+# $dom = DOM::Tiny->new('<title> <p>test&lt;</title>');
 # is $dom->at('title')->text, ' <p>test<', 'right text';
 # is "$dom", '<title> <p>test<</title>', 'right result';
 #
 # # "textarea"
-# $dom = Mojo::DOM58->new('<textarea id="a"> <p>test&lt;</textarea>');
+# $dom = DOM::Tiny->new('<textarea id="a"> <p>test&lt;</textarea>');
 # is $dom->at('textarea#a')->text, ' <p>test<', 'right text';
 # is "$dom", '<textarea id="a"> <p>test<</textarea>', 'right result';
 #
 # # Comments
-# $dom = Mojo::DOM58->new(<<EOF);
+# $dom = DOM::Tiny->new(<<EOF);
 # <!-- HTML5 -->
 # <!-- bad idea -- HTML5 -->
 # <!-- HTML4 -- >
@@ -2543,17 +2543,17 @@ is $dom.child-nodes.first.all-text,  'foo',    'right text';
 # SKIP: {
 #   skip 'Regex subexpression recursion causes SIGSEGV on 5.8', 1 unless $] >= 5.010000;
 #   # Huge number of attributes
-#   $dom = Mojo::DOM58->new('<div ' . ('a=b ' x 32768) . '>Test</div>');
+#   $dom = DOM::Tiny->new('<div ' . ('a=b ' x 32768) . '>Test</div>');
 #   is $dom->at('div[a=b]')->text, 'Test', 'right text';
 # }
 #
 # # Huge number of nested tags
 # my $huge = ('<a>' x 100) . 'works' . ('</a>' x 100);
-# $dom = Mojo::DOM58->new($huge);
+# $dom = DOM::Tiny->new($huge);
 # is $dom->all_text, 'works', 'right text';
 # is "$dom", $huge, 'right result';
 #
 # # TO_JSON
-# is +JSON::PP->new->convert_blessed->encode([Mojo::DOM58->new('<a></a>')]), '["<a></a>"]', 'right result';
+# is +JSON::PP->new->convert_blessed->encode([DOM::Tiny->new('<a></a>')]), '["<a></a>"]', 'right result';
 
 done-testing;

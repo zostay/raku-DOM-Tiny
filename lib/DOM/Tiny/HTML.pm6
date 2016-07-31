@@ -1,7 +1,7 @@
-unit module Mojo::DOM::HTML;
+unit module DOM::Tiny::HTML;
 use v6;
 
-use Mojo::DOM::Entities;
+use DOM::Tiny::Entities;
 
 grammar XMLTokenizer {
     token TOP { <ml-token>* }
@@ -205,7 +205,7 @@ role HasChildren is export {
         Proxy.new(
             FETCH => method () { $tree.render-children },
             STORE => method ($html) {
-                $tree.children = Mojo::DOM::HTML::_parse($html).children;
+                $tree.children = DOM::Tiny::HTML::_parse($html).children;
             },
         );
     }
@@ -565,7 +565,7 @@ class TreeMaker {
 our sub _parse($html, :$xml = False) {
     my $grammar = $xml ?? XMLTokenizer !! HTMLTokenizer;
     $grammar.parse($html,
-        actions => Mojo::DOM::HTML::TreeMaker.new(:$xml),
+        actions => DOM::Tiny::HTML::TreeMaker.new(:$xml),
     ).made;
 }
 

@@ -1,76 +1,76 @@
-unit class Mojo::DOM;
+unit class DOM::Tiny;
 use v6;
 
-use Mojo::DOM::CSS;
-use Mojo::DOM::HTML;
+use DOM::Tiny::CSS;
+use DOM::Tiny::HTML;
 
 my package EXPORT::DEFAULT {
     for < Root Text Tag Raw PI Doctype Comment CDATA DocumentNode Node HasChildren TextNode > -> $type {
-        OUR::{ "$type" } := Mojo::DOM::HTML::{ $type };
+        OUR::{ "$type" } := DOM::Tiny::HTML::{ $type };
     }
 }
 
 has Node $.tree = Root.new;
 has Bool $.xml = False;
 
-multi method Bool(Mojo::DOM:U:) returns Bool:D { False }
-multi method Bool(Mojo::DOM:D:) returns Bool:D { True }
+multi method Bool(DOM::Tiny:U:) returns Bool:D { False }
+multi method Bool(DOM::Tiny:D:) returns Bool:D { True }
 
-method AT-POS(Mojo::DOM:D: Int:D $i) is rw { self.child-nodes[$i] }
-method list(Mojo::DOM:D:) { self.child-nodes }
+method AT-POS(DOM::Tiny:D: Int:D $i) is rw { self.child-nodes[$i] }
+method list(DOM::Tiny:D:) { self.child-nodes }
 
-method AT-KEY(Mojo::DOM:D: Str:D $k) is rw {
+method AT-KEY(DOM::Tiny:D: Str:D $k) is rw {
     Proxy.new(
         FETCH => method ()   { self.attr($k) },
         STORE => method ($v) { self.attr($k, $v) },
     );
 }
-method hash(Mojo::DOM:D:) { self.attr }
+method hash(DOM::Tiny:D:) { self.attr }
 
-multi method parse(Mojo::DOM:U: Str:D $html, Bool :$xml = False) returns Mojo::DOM:D {
-    my $tree = Mojo::DOM::HTML::_parse($html, :$xml);
-    Mojo::DOM.new(:$tree, :$xml);
+multi method parse(DOM::Tiny:U: Str:D $html, Bool :$xml = False) returns DOM::Tiny:D {
+    my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
+    DOM::Tiny.new(:$tree, :$xml);
 }
 
-multi method parse(Mojo::DOM:D: Str:D $html, Bool :$xml) returns Mojo::DOM:D {
+multi method parse(DOM::Tiny:D: Str:D $html, Bool :$xml) returns DOM::Tiny:D {
     $!xml  = $xml with $xml;
-    $!tree = Mojo::DOM::HTML::_parse($html, :$!xml);
+    $!tree = DOM::Tiny::HTML::_parse($html, :$!xml);
     self
 }
 
-multi to-json(Mojo::DOM:D $dom) is export {
+multi to-json(DOM::Tiny:D $dom) is export {
     my $xml = $dom.xml // False;
-    Mojo::DOM::HTML::_render($dom.tree, :$xml)
+    DOM::Tiny::HTML::_render($dom.tree, :$xml)
 }
 
-method all-text(Mojo::DOM:D: Bool :$trim = True) {
+method all-text(DOM::Tiny:D: Bool :$trim = True) {
     $!tree.text(:recurse, :$trim);
 }
 
-method ancestors(Mojo::DOM:D: Str $selector?) {
+method ancestors(DOM::Tiny:D: Str $selector?) {
     self!select(self.tree.ancestor-nodes, $selector);
 }
 
-method append(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
+method append(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
         $!tree.parent.children.append:
-            _link($!tree.parent, Mojo::DOM::HTML::_parse($html).child-nodes)
+            _link($!tree.parent, DOM::Tiny::HTML::_parse($html).child-nodes)
     }
 
     self;
 }
 
-method append-content(Mojo::DOM:D: Str:D $html) {
+method append-content(DOM::Tiny:D: Str:D $html) {
     if $!tree ~~ HasChildren {
-        my @children = Mojo::DOM::HTML::_parse($html, :$!xml).children;
+        my @children = DOM::Tiny::HTML::_parse($html, :$!xml).children;
         $!tree.children.append:
-            _link($!tree, Mojo::DOM::HTML::_parse($html, :$!xml).children);
+            _link($!tree, DOM::Tiny::HTML::_parse($html, :$!xml).children);
         self;
     }
     elsif $!tree ~~ TextNode {
         my $parent = $!tree.parent;
         $parent.children.append:
-            _link($parent, Mojo::DOM::HTML::_parse($html, :$!xml).children);
+            _link($parent, DOM::Tiny::HTML::_parse($html, :$!xml).children);
         $.parent;
     }
     else {
@@ -78,7 +78,7 @@ method append-content(Mojo::DOM:D: Str:D $html) {
     }
 }
 
-method at(Mojo::DOM:D: Str:D $css) returns Mojo::DOM {
+method at(DOM::Tiny:D: Str:D $css) returns DOM::Tiny {
     if $.css.select-one($css) -> $tree {
         self.new(:$tree, :$!xml);
     }
@@ -87,55 +87,55 @@ method at(Mojo::DOM:D: Str:D $css) returns Mojo::DOM {
     }
 }
 
-multi method attr(Mojo::DOM:D: Str:D $name) returns Str {
+multi method attr(DOM::Tiny:D: Str:D $name) returns Str {
     $.attr{ $name } // Str;
 }
 
-multi method attr(Mojo::DOM:D: Str:D $name, Str:D $value) returns Mojo::DOM:D {
+multi method attr(DOM::Tiny:D: Str:D $name, Str:D $value) returns DOM::Tiny:D {
     $.attr{ $name } = $value;
     self;
 }
 
-multi method attr(Mojo::DOM:D: *%values) {
+multi method attr(DOM::Tiny:D: *%values) {
     return $!tree !~~ Tag ?? {} !! $!tree.attr unless %values;
     $.attr{ keys %values } = values %values;
     self;
 }
 
-method child-nodes(Mojo::DOM:D: Bool :$tags-only = False) {
+method child-nodes(DOM::Tiny:D: Bool :$tags-only = False) {
     return () unless $!tree ~~ HasChildren;
     self!select($!tree.child-nodes(:$tags-only));
 }
 
-method children(Mojo::DOM:D: Str $css?) {
+method children(DOM::Tiny:D: Str $css?) {
     return () unless $!tree ~~ HasChildren;
     self!select($!tree.child-nodes(:tags-only), $css);
 }
 
-multi method content(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
+multi method content(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
     $!tree.content = $html;
     self;
 }
 
-multi method content(Mojo::DOM:D:) is rw returns Str:D { $!tree.content }
+multi method content(DOM::Tiny:D:) is rw returns Str:D { $!tree.content }
 
-method descendant-nodes(Mojo::DOM:D:) {
+method descendant-nodes(DOM::Tiny:D:) {
     return () unless $!tree ~~ HasChildren;
     self!select($!tree.descendant-nodes);
 }
-method find(Mojo::DOM:D: Str:D $css) {
+method find(DOM::Tiny:D: Str:D $css) {
     $.css.select($css).map({
-        Mojo::DOM.new(tree => $_, :$!xml)
+        DOM::Tiny.new(tree => $_, :$!xml)
     });
 }
-method following(Mojo::DOM:D: Str $css?) {
+method following(DOM::Tiny:D: Str $css?) {
     self!select(self!siblings(:tags-only)<after>, $css)
 }
-method following-nodes(Mojo::DOM:D:) { self!siblings()<after> }
+method following-nodes(DOM::Tiny:D:) { self!siblings()<after> }
 
-method matches(Mojo::DOM:D: Str:D $css) { $.css.matches($css) }
+method matches(DOM::Tiny:D: Str:D $css) { $.css.matches($css) }
 
-method namespace(Mojo::DOM:D:) returns Str {
+method namespace(DOM::Tiny:D:) returns Str {
     return Nil if $!tree !~~ Tag;
 
     # Extract namespace prefix and search parents
@@ -155,15 +155,15 @@ method namespace(Mojo::DOM:D:) returns Str {
     return Str;
 }
 
-method next(Mojo::DOM:D:) {
+method next(DOM::Tiny:D:) {
     self!maybe(self!siblings(:tags-only, :pos(0))<after>);
 }
 
-method next-node(Mojo::DOM:D:) {
+method next-node(DOM::Tiny:D:) {
     self!maybe(self!siblings(:pos(0))<after>);
 }
 
-method parent(Mojo::DOM:D:) returns Mojo::DOM {
+method parent(DOM::Tiny:D:) returns DOM::Tiny {
     if $!tree ~~ Root {
         Nil
     }
@@ -172,30 +172,30 @@ method parent(Mojo::DOM:D:) returns Mojo::DOM {
     }
 }
 
-method preceding(Mojo::DOM:D: Str $css?) {
+method preceding(DOM::Tiny:D: Str $css?) {
     self!select(self!siblings(:tags-only)<before>, $css);
 }
-method preceding-nodes(Mojo::DOM:D:) {
+method preceding-nodes(DOM::Tiny:D:) {
     self!siblings()<before>;
 }
 
-method prepend(Mojo::DOM:D: Str:D $html) returns Mojo::DOM:D {
+method prepend(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
         $!tree.parent.children.prepend:
-            _link($!tree.parent, Mojo::DOM::HTML::_parse($html).child-nodes);
+            _link($!tree.parent, DOM::Tiny::HTML::_parse($html).child-nodes);
     }
 
     self;
 }
-method prepend-content(Mojo::DOM:D: Str:D $html) {
+method prepend-content(DOM::Tiny:D: Str:D $html) {
     if $!tree ~~ HasChildren {
         $!tree.children.prepend:
-            _link($!tree, Mojo::DOM::HTML::_parse($html).child-nodes);
+            _link($!tree, DOM::Tiny::HTML::_parse($html).child-nodes);
     }
     elsif $!tree ~~ TextNode {
         my $parent = $!tree.parent;
         $parent.children.prepend:
-            _link($parent, Mojo::DOM::HTML::_parse($html, :$!xml).children);
+            _link($parent, DOM::Tiny::HTML::_parse($html, :$!xml).children);
         $.parent;
     }
     else {
@@ -203,30 +203,30 @@ method prepend-content(Mojo::DOM:D: Str:D $html) {
     }
 }
 
-method previous(Mojo::DOM:D:) {
+method previous(DOM::Tiny:D:) {
     self!maybe(self!siblings(:tags-only, :pos(*-1))<before>);
 }
-method previous-node(Mojo::DOM:D:) {
+method previous-node(DOM::Tiny:D:) {
     self!maybe(self!siblings(:pos(*-1))<before>);
 }
 
-method remove(Mojo::DOM:D:) { self.replace('') }
+method remove(DOM::Tiny:D:) { self.replace('') }
 
-method replace(Mojo::DOM:D: Str:D $html) {
+method replace(DOM::Tiny:D: Str:D $html) {
     if $!tree ~~ Root {
         self.parse($html);
     }
     else {
         self!replace: $!tree.parent, $!tree,
-            Mojo::DOM::HTML::_parse($html).child-nodes
+            DOM::Tiny::HTML::_parse($html).child-nodes
     }
 }
 
-method root(Mojo::DOM:D:) {
+method root(DOM::Tiny:D:) {
     $!tree ~~ Root ?? self !! $!tree.root
 }
 
-method strip(Mojo::DOM:D:) {
+method strip(DOM::Tiny:D:) {
     if $!tree ~~ Tag {
         self!replace: $!tree.children, $!tree, $!tree.child-nodes;
     }
@@ -235,26 +235,26 @@ method strip(Mojo::DOM:D:) {
     }
 }
 
-multi method tag(Mojo::DOM:D:) returns Str {
+multi method tag(DOM::Tiny:D:) returns Str {
     $!tree ~~ Tag ?? $!tree.tag !! Nil
 }
 
-multi method tag(Mojo::DOM:D: Str:D $tag) returns Mojo::DOM:D {
+multi method tag(DOM::Tiny:D: Str:D $tag) returns DOM::Tiny:D {
     if $!tree ~~ Tag {
         $!tree.tag = $tag;
     }
     self;
 }
 
-method text(Mojo::DOM:D: Bool :$trim, Bool :$recurse) {
+method text(DOM::Tiny:D: Bool :$trim, Bool :$recurse) {
     $!tree.text(:$trim, :$recurse);
 }
-method render(Mojo::DOM:D:) {
+method render(DOM::Tiny:D:) {
     $!tree.render(:$!xml);
 }
-multi method Str(Mojo::DOM:D:) { self.render }
+multi method Str(DOM::Tiny:D:) { self.render }
 
-method type(Mojo::DOM:D:) { $!tree.WHAT }
+method type(DOM::Tiny:D:) { $!tree.WHAT }
 
 my multi _val(Tag, 'option', $dom) { $dom<value> // $dom.text }
 my multi _val(Tag, 'input', $dom) {
@@ -273,20 +273,20 @@ my multi _val(Tag, 'select', $dom) {
 }
 my multi _val($, $, $dom) { Nil }
 
-method val(Mojo::DOM:D:) returns Str {
+method val(DOM::Tiny:D:) returns Str {
     _val($.type, $.tag, self);
 }
 
-method wrap(Mojo::DOM:D: Str:D $html) {
+method wrap(DOM::Tiny:D: Str:D $html) {
     _wrap($!tree.parent, ($!tree,), $html);
     self
 }
-method wrap-content(Mojo::DOM:D: Str:D $html) {
+method wrap-content(DOM::Tiny:D: Str:D $html) {
     _wrap($!tree, $!tree.children, $html) if $!tree ~~ HasChildren;
     self
 }
 
-method css(Mojo::DOM:D:) { Mojo::DOM::CSS.new(:$!tree) }
+method css(DOM::Tiny:D:) { DOM::Tiny::CSS.new(:$!tree) }
 
 my sub _link($parent, @children) {
 
@@ -299,7 +299,7 @@ my sub _link($parent, @children) {
 }
 
 method !maybe($tree) {
-    $tree ?? Mojo::DOM.new(:$tree, :$!xml) !! Nil
+    $tree ?? DOM::Tiny.new(:$tree, :$!xml) !! Nil
 }
 
 method !replace($parent, $child, @nodes) {
@@ -309,7 +309,7 @@ method !replace($parent, $child, @nodes) {
 }
 
 method !select($collection, $selector?) {
-    my $list := $collection.map: { Mojo::DOM.new(:$^tree, :$!xml) };
+    my $list := $collection.map: { DOM::Tiny.new(:$^tree, :$!xml) };
     if $selector {
         $list.grep({ .matches($selector) });
     }
@@ -336,7 +336,7 @@ method !siblings(:$tags-only = False, :$pos) {
 }
 
 my sub _wrap($parent, @nodes, $html) {
-    my $innermost = my $wrapper = Mojo::DOM::HTML::_parse($html);
+    my $innermost = my $wrapper = DOM::Tiny::HTML::_parse($html);
     while $innermost.child-nodes(:tags-only)[0] -> $next-inner {
         $innermost = $next-inner;
     }

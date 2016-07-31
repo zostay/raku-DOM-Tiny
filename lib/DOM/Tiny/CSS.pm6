@@ -1,7 +1,7 @@
-unit class Mojo::DOM::CSS;
+unit class DOM::Tiny::CSS;
 use v6;
 
-use Mojo::DOM::HTML;
+use DOM::Tiny::HTML;
 
 my class Joiner {
     has @.combine;
@@ -411,12 +411,12 @@ class Compiler {
 
 has $.tree is rw;
 
-method matches(Mojo::DOM::CSS:D: Str:D $css) returns Bool:D {
+method matches(DOM::Tiny::CSS:D: Str:D $css) returns Bool:D {
     my $*TREE-CONTEXT = $!tree;
     $!tree ~~ _compile($css);
 }
 
-method select(Mojo::DOM::CSS:D: Str:D $css) {
+method select(DOM::Tiny::CSS:D: Str:D $css) {
     return () unless $!tree ~~ HasChildren;
 
     my $matcher = _compile($css);
@@ -428,13 +428,13 @@ method select(Mojo::DOM::CSS:D: Str:D $css) {
     }
 }
 
-method select-one(Mojo::DOM::CSS:D: Str:D $css) returns DocumentNode:D {
+method select-one(DOM::Tiny::CSS:D: Str:D $css) returns DocumentNode:D {
     self.select($css).first
 }
 
 my sub _compile($css) {
-    Mojo::DOM::CSS::Selector.parse($css,
-        actions => Mojo::DOM::CSS::Compiler,
+    DOM::Tiny::CSS::Selector.parse($css,
+        actions => DOM::Tiny::CSS::Compiler,
     ).made;
 }
 
