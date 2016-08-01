@@ -4,315 +4,308 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# Empty
-is(DOM::Tiny.new,                    '',    'right result');
-is(DOM::Tiny.parse(''),              '',    'right result');
-is(DOM::Tiny.new.parse(''),          '',    'right result');
-is(DOM::Tiny.new.at('p'),            Nil,   'no result');
-is(DOM::Tiny.new.append-content(''), '',    'right result');
-is(DOM::Tiny.new.all-text,           '',    'right result');
-
-# Simple (basics)
-{
-my $dom
-  = DOM::Tiny.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
-is $dom.at('#b').text, 'B', 'right text';
-my $div := $dom.find('div[id]')».text;
-is-deeply $div, <A B>, 'found all div elements with id';
-is $dom.at('#a').attr('foo'), 0, 'right attribute';
-is $dom.at('#a').attr<foo>, 0, 'right attribute';
-is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
-  'right result';
+subtest 'Empty', {
+    is(DOM::Tiny.new,                    '',    'right result');
+    is(DOM::Tiny.parse(''),              '',    'right result');
+    is(DOM::Tiny.new.parse(''),          '',    'right result');
+    is(DOM::Tiny.new.at('p'),            Nil,   'no result');
+    is(DOM::Tiny.new.append-content(''), '',    'right result');
+    is(DOM::Tiny.new.all-text,           '',    'right result');
 }
 
-# Tap into method chain
-{
-my $dom = DOM::Tiny.parse('<div id="a">A</div><div id="b">B</div>');
-is-deeply $dom.find('[id]')».attr('id'), <a b>,
-  'right result';
-is { $dom.at('#b').remove; $dom }(), '<div id="a">A</div>',
-  'right result';
-
-# Build tree from scratch
-is(DOM::Tiny.new.append-content('<p>').at('p').append-content('0').text,
-  '0', 'right text');
+subtest 'Simple (basics)', {
+    my $dom
+      = DOM::Tiny.parse('<div><div FOO="0" id="a">A</div><div id="b">B</div></div>');
+    is $dom.at('#b').text, 'B', 'right text';
+    my $div := $dom.find('div[id]')».text;
+    is-deeply $div, <A B>, 'found all div elements with id';
+    is $dom.at('#a').attr('foo'), 0, 'right attribute';
+    is $dom.at('#a').attr<foo>, 0, 'right attribute';
+    is "$dom", '<div><div foo="0" id="a">A</div><div id="b">B</div></div>',
+      'right result';
 }
 
-# Simple nesting with healing (tree structure)
-{
-my $dom = DOM::Tiny.parse(
-    q[<foo><bar a="b&lt;c">ju<baz a23>s<bazz />t</bar>works</foo>],
-);
-cmp-ok $dom.tree, '~~', Root, 'right type';
-cmp-ok $dom.tree.children[0], '~~', Tag, 'right type';
-is $dom.tree.children[0].tag, 'foo', 'right tag';
-is-deeply $dom.tree.children[0].attr, {}, 'empty attributes';
-cmp-ok $dom.tree.children[0].parent, '===', $dom.tree, 'right parent';
-cmp-ok $dom.tree.children[0].children[0], '~~', Tag, 'right type';
-is $dom.tree.children[0].children[0].tag, 'bar', 'right tag';
-is-deeply $dom.tree.children[0].children[0].attr, {a => 'b<c'}, 'right attributes';
-cmp-ok $dom.tree.children[0].children[0].parent, '===', $dom.tree.children[0], 'right parent';
-cmp-ok $dom.tree.children[0].children[0].children[0], '~~', Text, 'right type';
-is $dom.tree.children[0].children[0].children[0].text, 'ju',   'right text';
-cmp-ok $dom.tree.children[0].children[0].children[0].parent, '===', $dom.tree.children[0].children[0], 'right parent';
-cmp-ok $dom.tree.children[0].children[0].children[1], '~~', Tag, 'right type';
-is $dom.tree.children[0].children[0].children[1].tag, 'baz', 'right tag';
-is-deeply $dom.tree.children[0].children[0].children[1].attr, {a23 => Nil}, 'right attributes';
-cmp-ok $dom.tree.children[0].children[0].children[1].parent, '===', $dom.tree.children[0].children[0], 'right parent';
-cmp-ok $dom.tree.children[0].children[0].children[1].children[0], '~~', Text, 'right type';
-is $dom.tree.children[0].children[0].children[1].children[0].text, 's',    'right text';
-cmp-ok $dom.tree.children[0].children[0].children[1].children[0].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
-cmp-ok $dom.tree.children[0].children[0].children[1].children[1], '~~', Tag,  'right type';
-is $dom.tree.children[0].children[0].children[1].children[1].tag, 'bazz', 'right tag';
-is-deeply $dom.tree.children[0].children[0].children[1].children[1].attr, {}, 'empty attributes';
-cmp-ok $dom.tree.children[0].children[0].children[1].children[1].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
-cmp-ok $dom.tree.children[0].children[0].children[1].children[2], '~~', Text, 'right type';
-is $dom.tree.children[0].children[0].children[1].children[2].text, 't',    'right text';
-cmp-ok $dom.tree.children[0].children[0].children[1].children[2].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
-cmp-ok $dom.tree.children[0].children[1], '~~', Text, 'right type';
-is $dom.tree.children[0].children[1].text, 'works', 'right text';
-cmp-ok $dom.tree.children[0].children[1].parent, '===', $dom.tree.children[0], 'right parent';
-is $dom.render, q:to/EOF/.trim, 'right result';
-<foo><bar a="b&lt;c">ju<baz a23>s<bazz></bazz>t</baz></bar>works</foo>
-EOF
+subtest 'Tap into method chain', {
+    my $dom = DOM::Tiny.parse('<div id="a">A</div><div id="b">B</div>');
+    is-deeply $dom.find('[id]')».attr('id'), <a b>,
+      'right result';
+    is { $dom.at('#b').remove; $dom }(), '<div id="a">A</div>',
+      'right result';
+
+    # Build tree from scratch
+    is(DOM::Tiny.new.append-content('<p>').at('p').append-content('0').text,
+      '0', 'right text');
 }
 
-# Select based on parent
-{
-my $dom = DOM::Tiny.parse(q:to/EOF/);
-<body>
-  <div>test1</div>
-  <div><div>test2</div></div>
-<body>
-EOF
-is $dom.find('body > div')[0].text, 'test1', 'right text';
-is $dom.find('body > div')[1].text, '',      'no content';
-is $dom.find('body > div')[2], Nil, 'no result';
-is $dom.find('body > div').elems, 2, 'right number of elements';
-is $dom.find('body > div > div')[0].text, 'test2', 'right text';
-is $dom.find('body > div > div')[1], Nil, 'no result';
-is $dom.find('body > div > div').elems, 1, 'right number of elements';
+subtest 'Simple nesting with healing (tree structure)', {
+    my $dom = DOM::Tiny.parse(
+        q[<foo><bar a="b&lt;c">ju<baz a23>s<bazz />t</bar>works</foo>],
+    );
+    cmp-ok $dom.tree, '~~', Root, 'right type';
+    cmp-ok $dom.tree.children[0], '~~', Tag, 'right type';
+    is $dom.tree.children[0].tag, 'foo', 'right tag';
+    is-deeply $dom.tree.children[0].attr, {}, 'empty attributes';
+    cmp-ok $dom.tree.children[0].parent, '===', $dom.tree, 'right parent';
+    cmp-ok $dom.tree.children[0].children[0], '~~', Tag, 'right type';
+    is $dom.tree.children[0].children[0].tag, 'bar', 'right tag';
+    is-deeply $dom.tree.children[0].children[0].attr, {a => 'b<c'}, 'right attributes';
+    cmp-ok $dom.tree.children[0].children[0].parent, '===', $dom.tree.children[0], 'right parent';
+    cmp-ok $dom.tree.children[0].children[0].children[0], '~~', Text, 'right type';
+    is $dom.tree.children[0].children[0].children[0].text, 'ju',   'right text';
+    cmp-ok $dom.tree.children[0].children[0].children[0].parent, '===', $dom.tree.children[0].children[0], 'right parent';
+    cmp-ok $dom.tree.children[0].children[0].children[1], '~~', Tag, 'right type';
+    is $dom.tree.children[0].children[0].children[1].tag, 'baz', 'right tag';
+    is-deeply $dom.tree.children[0].children[0].children[1].attr, {a23 => Nil}, 'right attributes';
+    cmp-ok $dom.tree.children[0].children[0].children[1].parent, '===', $dom.tree.children[0].children[0], 'right parent';
+    cmp-ok $dom.tree.children[0].children[0].children[1].children[0], '~~', Text, 'right type';
+    is $dom.tree.children[0].children[0].children[1].children[0].text, 's',    'right text';
+    cmp-ok $dom.tree.children[0].children[0].children[1].children[0].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
+    cmp-ok $dom.tree.children[0].children[0].children[1].children[1], '~~', Tag,  'right type';
+    is $dom.tree.children[0].children[0].children[1].children[1].tag, 'bazz', 'right tag';
+    is-deeply $dom.tree.children[0].children[0].children[1].children[1].attr, {}, 'empty attributes';
+    cmp-ok $dom.tree.children[0].children[0].children[1].children[1].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
+    cmp-ok $dom.tree.children[0].children[0].children[1].children[2], '~~', Text, 'right type';
+    is $dom.tree.children[0].children[0].children[1].children[2].text, 't',    'right text';
+    cmp-ok $dom.tree.children[0].children[0].children[1].children[2].parent, '===', $dom.tree.children[0].children[0].children[1], 'right parent';
+    cmp-ok $dom.tree.children[0].children[1], '~~', Text, 'right type';
+    is $dom.tree.children[0].children[1].text, 'works', 'right text';
+    cmp-ok $dom.tree.children[0].children[1].parent, '===', $dom.tree.children[0], 'right parent';
+    is $dom.render, q:to/EOF/.trim, 'right result';
+    <foo><bar a="b&lt;c">ju<baz a23>s<bazz></bazz>t</baz></bar>works</foo>
+    EOF
 }
 
-# A bit of everything (basic navigation)
-{
-my $dom = DOM::Tiny.new.parse(q:to/EOF/);
-<!doctype foo>
-<foo bar="ba&lt;z">
-  test
-  <simple class="working">easy</simple>
-  <test foo="bar" id="test" />
-  <!-- lala -->
-  works well
-  <![CDATA[ yada yada]]>
-  <?boom lalalala ?>
-  <a little bit broken>
-  < very broken
-  <br />
-  more text
-</foo>
-EOF
-ok !$dom.xml, 'XML mode not detected';
-is $dom.tag, Nil, 'no tag';
-is $dom.attr('foo'), Str, 'no attribute';
-is $dom.attr(foo => 'bar').attr('foo'), Str, 'no attribute';
-is $dom.tree.children[0].WHAT, Doctype, 'right type';
-is $dom.tree.children[0].doctype, 'foo', 'right doctype';
-is "$dom", q:to/EOF/, 'right result';
-<!DOCTYPE foo>
-<foo bar="ba&lt;z">
-  test
-  <simple class="working">easy</simple>
-  <test foo="bar" id="test"></test>
-  <!-- lala -->
-  works well
-  <![CDATA[ yada yada]]>
-  <?boom lalalala ?>
-  <a bit broken little>
-  &lt; very broken
-  <br>
-  more text
-</a></foo>
-EOF
-my $simple = $dom.at('foo simple.working[class^="wor"]');
-is $simple.parent.all-text,
-  'test easy works well yada yada < very broken more text', 'right text';
-is $simple.tag, 'simple', 'right tag';
-is $simple.attr('class'), 'working', 'right class attribute';
-is $simple.text, 'easy', 'right text';
-is $simple.parent.tag, 'foo', 'right parent tag';
-is $simple.parent.attr<bar>, 'ba<z', 'right parent attribute';
-is $simple.parent.children[1].tag, 'test', 'right sibling';
-is $simple.Str, '<simple class="working">easy</simple>',
-  'stringified right';
-$simple.parent.attr(bar => 'baz').attr(this => 'works', too => 'yea');
-is $simple.parent.attr('bar'),  'baz',   'right parent attribute';
-is $simple.parent.attr('this'), 'works', 'right parent attribute';
-is $simple.parent.attr('too'),  'yea',   'right parent attribute';
-is $dom.at('test#test').tag,              'test',   'right tag';
-is $dom.at('[class$="ing"]').tag,         'simple', 'right tag';
-is $dom.at('[class="working"]').tag,      'simple', 'right tag';
-is $dom.at('[class$=ing]').tag,           'simple', 'right tag';
-is $dom.at('[class=working][class]').tag, 'simple', 'right tag';
-is $dom.at('foo > simple').next.tag, 'test', 'right tag';
-is $dom.at('foo > simple').next.next.tag, 'a', 'right tag';
-is $dom.at('foo > test').previous.tag, 'simple', 'right tag';
-is $dom.next,     Nil, 'no siblings';
-is $dom.previous, Nil, 'no siblings';
-is $dom.at('foo > a').next,          Nil, 'no next sibling';
-is $dom.at('foo > simple').previous, Nil, 'no previous sibling';
-is-deeply $dom.at('simple').ancestors».tag, ('foo',),
-  'right results';
-ok !$dom.at('simple').ancestors.first.xml, 'XML mode not active';
+subtest 'Select based on parent', {
+    my $dom = DOM::Tiny.parse(q:to/EOF/);
+    <body>
+      <div>test1</div>
+      <div><div>test2</div></div>
+    <body>
+    EOF
+    is $dom.find('body > div')[0].text, 'test1', 'right text';
+    is $dom.find('body > div')[1].text, '',      'no content';
+    is $dom.find('body > div')[2], Nil, 'no result';
+    is $dom.find('body > div').elems, 2, 'right number of elements';
+    is $dom.find('body > div > div')[0].text, 'test2', 'right text';
+    is $dom.find('body > div > div')[1], Nil, 'no result';
+    is $dom.find('body > div > div').elems, 1, 'right number of elements';
 }
 
-# Nodes
-{
-my $dom = DOM::Tiny.parse(
-  '<!DOCTYPE before><p>test<![CDATA[123]]><!-- 456 --></p><?after?>');
-is $dom.at('p').preceding-nodes.first.content, 'before', 'right content';
-is $dom.at('p').preceding-nodes.elems, 1, 'right number of nodes';
-is $dom.at('p').child-nodes[*-1].preceding-nodes.first.content, 'test',
-  'right content';
-is $dom.at('p').child-nodes[*-1].preceding-nodes[*-1].content, '123',
-  'right content';
-is $dom.at('p').child-nodes[*-1].preceding-nodes.elems, 2,
-  'right number of nodes';
-is $dom.preceding-nodes.elems, 0, 'no preceding nodes';
-is $dom.at('p').following-nodes.first.content, 'after', 'right content';
-is $dom.at('p').following-nodes.elems, 1, 'right number of nodes';
-is $dom.child-nodes.first.following-nodes.first.tag, 'p', 'right tag';
-is $dom.child-nodes.first.following-nodes[*-1].content, 'after',
-  'right content';
-is $dom.child-nodes.first.following-nodes.elems, 2, 'right number of nodes';
-is $dom.following-nodes.elems, 0, 'no following nodes';
-is $dom.at('p').previous-node.content,       'before', 'right content';
-is $dom.at('p').previous-node.previous-node, Nil,     'no more siblings';
-is $dom.at('p').next-node.content,           'after',   'right content';
-is $dom.at('p').next-node.next-node,         Nil,     'no more siblings';
-is $dom.at('p').child-nodes[*-1].previous-node.previous-node.content,
-  'test', 'right content';
-is $dom.at('p').child-nodes.first.next-node.next-node.content, ' 456 ',
-  'right content';
-is $dom.descendant-nodes[0].type,    Doctype, 'right type';
-is $dom.descendant-nodes[0].content, 'before', 'right content';
-is $dom.descendant-nodes[0], '<!DOCTYPE before>', 'right content';
-is $dom.descendant-nodes[1].tag,     'p',     'right tag';
-is $dom.descendant-nodes[2].type,    Text,  'right type';
-is $dom.descendant-nodes[2].content, 'test',  'right content';
-is $dom.descendant-nodes[5].type,    PI,    'right type';
-is $dom.descendant-nodes[5].content, 'after', 'right content';
-is $dom.at('p').descendant-nodes[0].type,    Text, 'right type';
-is $dom.at('p').descendant-nodes[0].content, 'test', 'right type';
-is $dom.at('p').descendant-nodes[*-1].type,    Comment, 'right type';
-is $dom.at('p').descendant-nodes[*-1].content, ' 456 ',   'right type';
-is $dom.child-nodes[1].child-nodes.first.parent.tag, 'p', 'right tag';
-is $dom.child-nodes[1].child-nodes.first.content, 'test', 'right content';
-is $dom.child-nodes[1].child-nodes.first, 'test', 'right content';
-is $dom.at('p').child-nodes.first.type, Text, 'right type';
-is $dom.at('p').child-nodes.first.remove.tag, 'p', 'right tag';
-is $dom.at('p').child-nodes.first.type,    CDATA, 'right type';
-is $dom.at('p').child-nodes.first.content, '123',   'right content';
-is $dom.at('p').child-nodes[1].type,    Comment, 'right type';
-is $dom.at('p').child-nodes[1].content, ' 456 ',   'right content';
-is $dom[0].type,    Doctype, 'right type';
-is $dom[0].content, 'before', 'right content';
-is $dom.child-nodes[2].type,    PI,    'right type';
-is $dom.child-nodes[2].content, 'after', 'right content';
-is $dom.child-nodes.first.content('again').content, 'again',
-  'right content';
-is $dom.child-nodes.grep({ .type ~~ PI })».remove.first.type, Root, 'right type';
-is "$dom", '<!DOCTYPE again><p><![CDATA[123]]><!-- 456 --></p>', 'right result';
+subtest 'A bit of everything (basic navigation)', {
+    my $dom = DOM::Tiny.new.parse(q:to/EOF/);
+    <!doctype foo>
+    <foo bar="ba&lt;z">
+      test
+      <simple class="working">easy</simple>
+      <test foo="bar" id="test" />
+      <!-- lala -->
+      works well
+      <![CDATA[ yada yada]]>
+      <?boom lalalala ?>
+      <a little bit broken>
+      < very broken
+      <br />
+      more text
+    </foo>
+    EOF
+    ok !$dom.xml, 'XML mode not detected';
+    is $dom.tag, Nil, 'no tag';
+    is $dom.attr('foo'), Str, 'no attribute';
+    is $dom.attr(foo => 'bar').attr('foo'), Str, 'no attribute';
+    is $dom.tree.children[0].WHAT, Doctype, 'right type';
+    is $dom.tree.children[0].doctype, 'foo', 'right doctype';
+    is "$dom", q:to/EOF/, 'right result';
+    <!DOCTYPE foo>
+    <foo bar="ba&lt;z">
+      test
+      <simple class="working">easy</simple>
+      <test foo="bar" id="test"></test>
+      <!-- lala -->
+      works well
+      <![CDATA[ yada yada]]>
+      <?boom lalalala ?>
+      <a bit broken little>
+      &lt; very broken
+      <br>
+      more text
+    </a></foo>
+    EOF
+    my $simple = $dom.at('foo simple.working[class^="wor"]');
+    is $simple.parent.all-text,
+      'test easy works well yada yada < very broken more text', 'right text';
+    is $simple.tag, 'simple', 'right tag';
+    is $simple.attr('class'), 'working', 'right class attribute';
+    is $simple.text, 'easy', 'right text';
+    is $simple.parent.tag, 'foo', 'right parent tag';
+    is $simple.parent.attr<bar>, 'ba<z', 'right parent attribute';
+    is $simple.parent.children[1].tag, 'test', 'right sibling';
+    is $simple.Str, '<simple class="working">easy</simple>',
+      'stringified right';
+    $simple.parent.attr(bar => 'baz').attr(this => 'works', too => 'yea');
+    is $simple.parent.attr('bar'),  'baz',   'right parent attribute';
+    is $simple.parent.attr('this'), 'works', 'right parent attribute';
+    is $simple.parent.attr('too'),  'yea',   'right parent attribute';
+    is $dom.at('test#test').tag,              'test',   'right tag';
+    is $dom.at('[class$="ing"]').tag,         'simple', 'right tag';
+    is $dom.at('[class="working"]').tag,      'simple', 'right tag';
+    is $dom.at('[class$=ing]').tag,           'simple', 'right tag';
+    is $dom.at('[class=working][class]').tag, 'simple', 'right tag';
+    is $dom.at('foo > simple').next.tag, 'test', 'right tag';
+    is $dom.at('foo > simple').next.next.tag, 'a', 'right tag';
+    is $dom.at('foo > test').previous.tag, 'simple', 'right tag';
+    is $dom.next,     Nil, 'no siblings';
+    is $dom.previous, Nil, 'no siblings';
+    is $dom.at('foo > a').next,          Nil, 'no next sibling';
+    is $dom.at('foo > simple').previous, Nil, 'no previous sibling';
+    is-deeply $dom.at('simple').ancestors».tag, ('foo',),
+      'right results';
+    ok !$dom.at('simple').ancestors.first.xml, 'XML mode not active';
 }
 
-# Modify nodes
-{
-my $dom = DOM::Tiny.parse('<script>la<la>la</script>');
-is $dom.at('script').type, Tag, 'right type';
-is $dom.at('script')[0].type,    Raw,      'right type';
-is $dom.at('script')[0].content, 'la<la>la', 'right content';
-is "$dom", '<script>la<la>la</script>', 'right result';
-is $dom.at('script').child-nodes.first.replace('a<b>c</b>1<b>d</b>').tag,
-  'script', 'right tag';
-is "$dom", '<script>a<b>c</b>1<b>d</b></script>', 'right result';
-is $dom.at('b').child-nodes.first.append('e').content, 'c',
-  'right content';
-is $dom.at('b').child-nodes.first.prepend('f').type, Text, 'right type';
-is "$dom", '<script>a<b>fce</b>1<b>d</b></script>', 'right result';
-is $dom.at('script').child-nodes.first.following.first.tag, 'b',
-  'right tag';
-is $dom.at('script').child-nodes.first.next.content, 'fce',
-  'right content';
-is $dom.at('script').child-nodes.first.previous, Nil, 'no siblings';
-is $dom.at('script').child-nodes[2].previous.content, 'fce',
-  'right content';
-is $dom.at('b').child-nodes[1].next, Nil, 'no siblings';
-is $dom.at('script').child-nodes.first.wrap('<i>:)</i>').root,
-  '<script><i>:)a</i><b>fce</b>1<b>d</b></script>', 'right result';
-is $dom.at('i').child-nodes.first.wrap-content('<b></b>').root,
-  '<script><i>:)a</i><b>fce</b>1<b>d</b></script>', 'no changes';
-is $dom.at('i').child-nodes.first.wrap('<b></b>').root,
-  '<script><i><b>:)</b>a</i><b>fce</b>1<b>d</b></script>', 'right result';
-  is $dom.at('b').child-nodes.first.ancestors».tag.join(','),
-  'b,i,script', 'right result';
-is $dom.at('b').child-nodes.first.append-content('g').content, ':)g',
-  'right content';
-is $dom.at('b').child-nodes.first.prepend-content('h').content, 'h:)g',
-  'right content';
-is "$dom", '<script><i><b>h:)g</b>a</i><b>fce</b>1<b>d</b></script>',
-  'right result';
-is $dom.at('script > b:last-of-type').append('<!--y-->')
-  .following-nodes.first.content, 'y', 'right content';
-is $dom.at('i').prepend('z').preceding-nodes.first.content, 'z',
-  'right content';
-is $dom.at('i').following[*-1].text, 'd', 'right text';
-is $dom.at('i').following.elems, 2, 'right number of following elements';
-is $dom.at('i').following('b:last-of-type').first.text, 'd', 'right text';
-is $dom.at('i').following('b:last-of-type').elems, 1,
-  'right number of following elements';
-is $dom.following.elems, 0, 'no following elements';
-is $dom.at('script > b:last-of-type').preceding.first.tag, 'i', 'right tag';
-is $dom.at('script > b:last-of-type').preceding.elems, 2,
-  'right number of preceding elements';
-is $dom.at('script > b:last-of-type').preceding('b').first.tag, 'b',
-  'right tag';
-is $dom.at('script > b:last-of-type').preceding('b').elems, 1,
-  'right number of preceding elements';
-is $dom.preceding.elems, 0, 'no preceding elements';
-is "$dom", '<script>z<i><b>h:)g</b>a</i><b>fce</b>1<b>d</b><!--y--></script>',
-  'right result';
+subtest 'Nodes', {
+    my $dom = DOM::Tiny.parse(
+      '<!DOCTYPE before><p>test<![CDATA[123]]><!-- 456 --></p><?after?>');
+    is $dom.at('p').preceding-nodes.first.content, 'before', 'right content';
+    is $dom.at('p').preceding-nodes.elems, 1, 'right number of nodes';
+    is $dom.at('p').child-nodes[*-1].preceding-nodes.first.content, 'test',
+      'right content';
+    is $dom.at('p').child-nodes[*-1].preceding-nodes[*-1].content, '123',
+      'right content';
+    is $dom.at('p').child-nodes[*-1].preceding-nodes.elems, 2,
+      'right number of nodes';
+    is $dom.preceding-nodes.elems, 0, 'no preceding nodes';
+    is $dom.at('p').following-nodes.first.content, 'after', 'right content';
+    is $dom.at('p').following-nodes.elems, 1, 'right number of nodes';
+    is $dom.child-nodes.first.following-nodes.first.tag, 'p', 'right tag';
+    is $dom.child-nodes.first.following-nodes[*-1].content, 'after',
+      'right content';
+    is $dom.child-nodes.first.following-nodes.elems, 2, 'right number of nodes';
+    is $dom.following-nodes.elems, 0, 'no following nodes';
+    is $dom.at('p').previous-node.content,       'before', 'right content';
+    is $dom.at('p').previous-node.previous-node, Nil,     'no more siblings';
+    is $dom.at('p').next-node.content,           'after',   'right content';
+    is $dom.at('p').next-node.next-node,         Nil,     'no more siblings';
+    is $dom.at('p').child-nodes[*-1].previous-node.previous-node.content,
+      'test', 'right content';
+    is $dom.at('p').child-nodes.first.next-node.next-node.content, ' 456 ',
+      'right content';
+    is $dom.descendant-nodes[0].type,    Doctype, 'right type';
+    is $dom.descendant-nodes[0].content, 'before', 'right content';
+    is $dom.descendant-nodes[0], '<!DOCTYPE before>', 'right content';
+    is $dom.descendant-nodes[1].tag,     'p',     'right tag';
+    is $dom.descendant-nodes[2].type,    Text,  'right type';
+    is $dom.descendant-nodes[2].content, 'test',  'right content';
+    is $dom.descendant-nodes[5].type,    PI,    'right type';
+    is $dom.descendant-nodes[5].content, 'after', 'right content';
+    is $dom.at('p').descendant-nodes[0].type,    Text, 'right type';
+    is $dom.at('p').descendant-nodes[0].content, 'test', 'right type';
+    is $dom.at('p').descendant-nodes[*-1].type,    Comment, 'right type';
+    is $dom.at('p').descendant-nodes[*-1].content, ' 456 ',   'right type';
+    is $dom.child-nodes[1].child-nodes.first.parent.tag, 'p', 'right tag';
+    is $dom.child-nodes[1].child-nodes.first.content, 'test', 'right content';
+    is $dom.child-nodes[1].child-nodes.first, 'test', 'right content';
+    is $dom.at('p').child-nodes.first.type, Text, 'right type';
+    is $dom.at('p').child-nodes.first.remove.tag, 'p', 'right tag';
+    is $dom.at('p').child-nodes.first.type,    CDATA, 'right type';
+    is $dom.at('p').child-nodes.first.content, '123',   'right content';
+    is $dom.at('p').child-nodes[1].type,    Comment, 'right type';
+    is $dom.at('p').child-nodes[1].content, ' 456 ',   'right content';
+    is $dom[0].type,    Doctype, 'right type';
+    is $dom[0].content, 'before', 'right content';
+    is $dom.child-nodes[2].type,    PI,    'right type';
+    is $dom.child-nodes[2].content, 'after', 'right content';
+    is $dom.child-nodes.first.content('again').content, 'again',
+      'right content';
+    is $dom.child-nodes.grep({ .type ~~ PI })».remove.first.type, Root, 'right type';
+    is "$dom", '<!DOCTYPE again><p><![CDATA[123]]><!-- 456 --></p>', 'right result';
 }
 
-# # XML nodes
-{
-my $dom = DOM::Tiny.new(:xml).parse('<b>test<image /></b>');
-ok $dom.at('b').child-nodes.first.xml, 'XML mode active';
-ok $dom.at('b').child-nodes.first.replace('<br>').child-nodes.first.xml,
-  'XML mode active';
-is "$dom", '<b><br /><image /></b>', 'right result';
+subtest 'Modify nodes', {
+    my $dom = DOM::Tiny.parse('<script>la<la>la</script>');
+    is $dom.at('script').type, Tag, 'right type';
+    is $dom.at('script')[0].type,    Raw,      'right type';
+    is $dom.at('script')[0].content, 'la<la>la', 'right content';
+    is "$dom", '<script>la<la>la</script>', 'right result';
+    is $dom.at('script').child-nodes.first.replace('a<b>c</b>1<b>d</b>').tag,
+      'script', 'right tag';
+    is "$dom", '<script>a<b>c</b>1<b>d</b></script>', 'right result';
+    is $dom.at('b').child-nodes.first.append('e').content, 'c',
+      'right content';
+    is $dom.at('b').child-nodes.first.prepend('f').type, Text, 'right type';
+    is "$dom", '<script>a<b>fce</b>1<b>d</b></script>', 'right result';
+    is $dom.at('script').child-nodes.first.following.first.tag, 'b',
+      'right tag';
+    is $dom.at('script').child-nodes.first.next.content, 'fce',
+      'right content';
+    is $dom.at('script').child-nodes.first.previous, Nil, 'no siblings';
+    is $dom.at('script').child-nodes[2].previous.content, 'fce',
+      'right content';
+    is $dom.at('b').child-nodes[1].next, Nil, 'no siblings';
+    is $dom.at('script').child-nodes.first.wrap('<i>:)</i>').root,
+      '<script><i>:)a</i><b>fce</b>1<b>d</b></script>', 'right result';
+    is $dom.at('i').child-nodes.first.wrap-content('<b></b>').root,
+      '<script><i>:)a</i><b>fce</b>1<b>d</b></script>', 'no changes';
+    is $dom.at('i').child-nodes.first.wrap('<b></b>').root,
+      '<script><i><b>:)</b>a</i><b>fce</b>1<b>d</b></script>', 'right result';
+      is $dom.at('b').child-nodes.first.ancestors».tag.join(','),
+      'b,i,script', 'right result';
+    is $dom.at('b').child-nodes.first.append-content('g').content, ':)g',
+      'right content';
+    is $dom.at('b').child-nodes.first.prepend-content('h').content, 'h:)g',
+      'right content';
+    is "$dom", '<script><i><b>h:)g</b>a</i><b>fce</b>1<b>d</b></script>',
+      'right result';
+    is $dom.at('script > b:last-of-type').append('<!--y-->')
+      .following-nodes.first.content, 'y', 'right content';
+    is $dom.at('i').prepend('z').preceding-nodes.first.content, 'z',
+      'right content';
+    is $dom.at('i').following[*-1].text, 'd', 'right text';
+    is $dom.at('i').following.elems, 2, 'right number of following elements';
+    is $dom.at('i').following('b:last-of-type').first.text, 'd', 'right text';
+    is $dom.at('i').following('b:last-of-type').elems, 1,
+      'right number of following elements';
+    is $dom.following.elems, 0, 'no following elements';
+    is $dom.at('script > b:last-of-type').preceding.first.tag, 'i', 'right tag';
+    is $dom.at('script > b:last-of-type').preceding.elems, 2,
+      'right number of preceding elements';
+    is $dom.at('script > b:last-of-type').preceding('b').first.tag, 'b',
+      'right tag';
+    is $dom.at('script > b:last-of-type').preceding('b').elems, 1,
+      'right number of preceding elements';
+    is $dom.preceding.elems, 0, 'no preceding elements';
+    is "$dom", '<script>z<i><b>h:)g</b>a</i><b>fce</b>1<b>d</b><!--y--></script>',
+      'right result';
 }
 
-# Treating nodes as elements
-{
-my $dom = DOM::Tiny.parse('foo<b>bar</b>baz');
-is $dom.child-nodes.first.child-nodes.elems,      0, 'no nodes';
-is $dom.child-nodes.first.descendant-nodes.elems, 0, 'no nodes';
-is $dom.child-nodes.first.children.elems,         0, 'no children';
-is $dom.child-nodes.first.strip.parent, 'foo<b>bar</b>baz', 'no changes';
-is $dom.child-nodes.first.at('b'), Nil, 'no result';
-is $dom.child-nodes.first.find('*').elems, 0, 'no results';
-ok !$dom.child-nodes.first.matches('*'), 'no match';
-is-deeply $dom.child-nodes.first.attr, {}, 'no attributes';
-is $dom.child-nodes.first.namespace, Nil, 'no namespace';
-is $dom.child-nodes.first.tag,       Nil, 'no tag';
-is $dom.child-nodes.first.text,      'foo',    'right text';
-is $dom.child-nodes.first.all-text,  'foo',    'right text';
+subtest 'XML nodes', {
+    my $dom = DOM::Tiny.new(:xml).parse('<b>test<image /></b>');
+    ok $dom.at('b').child-nodes.first.xml, 'XML mode active';
+    ok $dom.at('b').child-nodes.first.replace('<br>').child-nodes.first.xml,
+      'XML mode active';
+    is "$dom", '<b><br /><image /></b>', 'right result';
 }
 
-# # Class and ID
-# $dom = DOM::Tiny->new('<div id="id" class="class">a</div>');
-# is $dom->at('div#id.class')->text, 'a', 'right text';
-#
+subtest 'Treating nodes as elements', {
+    my $dom = DOM::Tiny.parse('foo<b>bar</b>baz');
+    is $dom.child-nodes.first.child-nodes.elems,      0, 'no nodes';
+    is $dom.child-nodes.first.descendant-nodes.elems, 0, 'no nodes';
+    is $dom.child-nodes.first.children.elems,         0, 'no children';
+    is $dom.child-nodes.first.strip.parent, 'foo<b>bar</b>baz', 'no changes';
+    is $dom.child-nodes.first.at('b'), Nil, 'no result';
+    is $dom.child-nodes.first.find('*').elems, 0, 'no results';
+    ok !$dom.child-nodes.first.matches('*'), 'no match';
+    is-deeply $dom.child-nodes.first.attr, {}, 'no attributes';
+    is $dom.child-nodes.first.namespace, Nil, 'no namespace';
+    is $dom.child-nodes.first.tag,       Nil, 'no tag';
+    is $dom.child-nodes.first.text,      'foo',    'right text';
+    is $dom.child-nodes.first.all-text,  'foo',    'right text';
+}
+
+subtest 'Class and ID', {
+    my $dom = DOM::Tiny.parse('<div id="id" class="class">a</div>');
+    is $dom.at('div#id.class').text, 'a', 'right text';
+}
+
 # # Deep nesting (parent combinator)
 # $dom = DOM::Tiny->new(<<EOF);
 # <html>
