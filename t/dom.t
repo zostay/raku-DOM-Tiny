@@ -4,18 +4,18 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Already decoded Unicode snowman and quotes in selector
-# $dom = DOM::Tiny->new('<div id="snow&apos;m&quot;an">â˜ƒ</div>');
-# is $dom->at('[id="snow\'m\"an"]')->text,      'â˜ƒ', 'right text';
-# is $dom->at('[id="snow\'m\22 an"]')->text,    'â˜ƒ', 'right text';
-# is $dom->at('[id="snow\'m\000022an"]')->text, 'â˜ƒ', 'right text';
-# is $dom->at('[id="snow\'m\22an"]'),      undef, 'no result';
-# is $dom->at('[id="snow\'m\21 an"]'),     undef, 'no result';
-# is $dom->at('[id="snow\'m\000021an"]'),  undef, 'no result';
-# is $dom->at('[id="snow\'m\000021 an"]'), undef, 'no result';
-# is $dom->at("[id='snow\\'m\"an']")->text,  'â˜ƒ', 'right text';
-# is $dom->at("[id='snow\\27m\"an']")->text, 'â˜ƒ', 'right text';
-#
+# Already decoded Unicode snowman and quotes in selector
+my $dom = DOM::Tiny.parse('<div id="snow&apos;m&quot;an">â˜ƒ</div>');
+is $dom.at('[id="snow\'m\"an"]').text,      'â˜ƒ', 'right text';
+is $dom.at('[id="snow\'m\22 an"]').text,    'â˜ƒ', 'right text';
+is $dom.at('[id="snow\'m\000022an"]').text, 'â˜ƒ', 'right text';
+is $dom.at('[id="snow\'m\22an"]'),      Nil, 'no result';
+is $dom.at('[id="snow\'m\21 an"]'),     Nil, 'no result';
+is $dom.at('[id="snow\'m\000021an"]'),  Nil, 'no result';
+is $dom.at('[id="snow\'m\000021 an"]'), Nil, 'no result';
+is $dom.at("[id='snow\\'m\"an']").text,  'â˜ƒ', 'right text';
+is $dom.at("[id='snow\\27m\"an']").text, 'â˜ƒ', 'right text';
+
 # # Unicode and escaped selectors
 # my $html
 #   = '<html><div id="â˜ƒx">Snowman</div><div class="x â™¥">Heart</div></html>';

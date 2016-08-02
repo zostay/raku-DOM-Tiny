@@ -450,7 +450,7 @@ my sub _unescape($value is copy) {
     # Unescape Unicode characters
     $value .= subst(/
         "\\" $<cp> = [ <[ 0..9 a..f A..F ]> ** 1..6 ] \s?
-    /, { :16($<cp>).chr }, :global);
+    /, { :16(~$<cp>).chr }, :global);
 
     # Remove backslash
     $value .= trans([ '\\' ] => [ '' ]);
