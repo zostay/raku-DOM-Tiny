@@ -4,16 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # HTML1 (single quotes, uppercase tags and whitespace in attributes)
-# $dom = DOM::Tiny->new(q{<DIV id = 'test' foo ='bar' class= "tset">works</DIV>});
-# is $dom->at('#test')->text,       'works', 'right text';
-# is $dom->at('div')->text,         'works', 'right text';
-# is $dom->at('[foo="bar"]')->text, 'works', 'right text';
-# is $dom->at('[foo="ba"]'), undef, 'no result';
-# is $dom->at('[foo=bar]')->text, 'works', 'right text';
-# is $dom->at('[foo=ba]'), undef, 'no result';
-# is $dom->at('.tset')->text, 'works', 'right text';
-#
 # # Already decoded Unicode snowman and quotes in selector
 # $dom = DOM::Tiny->new('<div id="snow&apos;m&quot;an">â˜ƒ</div>');
 # is $dom->at('[id="snow\'m\"an"]')->text,      'â˜ƒ', 'right text';
