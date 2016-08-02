@@ -334,14 +334,14 @@ class Compiler {
         make AttrIs.new(
             name  => 'class',
             op    => '~=',
-            value => (~$<name>).trim,
+            value => $<name>.made,
         )
     }
     method selector:sym<id>($/) {
         make AttrIs.new(
             name  => 'id',
             op    => '=',
-            value => (~$<name>).trim,
+            value => $<name>.made,
         )
     }
     method selector:sym<attr>($/) {
@@ -412,6 +412,10 @@ class Compiler {
         my $i = $<case-i> ?? (~$<case-i> eq 'i') !! False;
         make \(value => ~$<value>, :$i);
     }
+
+    method name($/) {
+        make (~$/).trim;
+    }
 }
 
 has $.tree is rw;
@@ -454,4 +458,6 @@ my sub _unescape($value is copy) {
 
     # Remove backslash
     $value .= trans([ '\\' ] => [ '' ]);
+
+    $value;
 }
