@@ -4,13 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Looks remotely like HTML
-# $dom = DOM::Tiny->new(
-#   '<!DOCTYPE H "-/W/D HT 4/E">☃<title class=test>♥</title>☃');
-# is $dom->at('title')->text, '♥', 'right text';
-# is $dom->at('*')->text,     '♥', 'right text';
-# is $dom->at('.test')->text, '♥', 'right text';
-#
 # # Replace elements
 # $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
 # is $dom->at('p')->replace('<foo>bar</foo>'), '<div>foo<foo>bar</foo>bar</div>',
