@@ -4,19 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # HTML5 (unquoted values)
-# $dom = DOM::Tiny->new(
-#   '<div id = test foo ="bar" class=tset bar=/baz/ baz=//>works</div>');
-# is $dom->at('#test')->text,                'works', 'right text';
-# is $dom->at('div')->text,                  'works', 'right text';
-# is $dom->at('[foo=bar][foo="bar"]')->text, 'works', 'right text';
-# is $dom->at('[foo="ba"]'), undef, 'no result';
-# is $dom->at('[foo=bar]')->text, 'works', 'right text';
-# is $dom->at('[foo=ba]'), undef, 'no result';
-# is $dom->at('.tset')->text,       'works', 'right text';
-# is $dom->at('[bar=/baz/]')->text, 'works', 'right text';
-# is $dom->at('[baz=//]')->text,    'works', 'right text';
-
 # # HTML1 (single quotes, uppercase tags and whitespace in attributes)
 # $dom = DOM::Tiny->new(q{<DIV id = 'test' foo ='bar' class= "tset">works</DIV>});
 # is $dom->at('#test')->text,       'works', 'right text';
