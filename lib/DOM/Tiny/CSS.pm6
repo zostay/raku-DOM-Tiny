@@ -89,12 +89,17 @@ my class HasAttr {
 }
 
 my class AttrIs is HasAttr {
-    has $.value;
+    has Str $.op is required;
+    has Str $.value is required;
+    has Bool $.i = False;
 
-    submethod BUILD(:$op!, :$value!, :$i = False) {
-        my $unescaped = _unescape($value);
+    has $!rx;
+    method value-regex() {
+        return $!rx with $!rx;
 
-        my $rx = do given $op {
+        my $unescaped = _unescape($!value);
+
+        my $rx = do given $!op {
             when '~=' { rx{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
             when '*=' { rx{ $unescaped } }
             when '^=' { rx{ ^ $unescaped } }
@@ -102,14 +107,14 @@ my class AttrIs is HasAttr {
             default   { rx{ ^ $unescaped $ } }
         }
 
-        $rx = rx:i{ $rx } if $i;
-        $!value = $rx;
+        $rx = rx:i{ $rx } if $!i;
+        $!rx := $rx;
     }
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
         return False unless callsame;
         my $name = $current.attr.keys.first($.name);
-        $current.attr{ $name } ~~ $!value;
+        $current.attr{ $name } ~~ $.value-regex;
     }
 
     multi method ACCEPT(::?CLASS:D: $) { False }
@@ -329,14 +334,14 @@ class Compiler {
         make AttrIs.new(
             name  => 'class',
             op    => '~=',
-            value => ~$<name>,
+            value => (~$<name>).trim,
         )
     }
     method selector:sym<id>($/) {
         make AttrIs.new(
             name  => 'id',
             op    => '=',
-            value => ~$<name>,
+            value => (~$<name>).trim,
         )
     }
     method selector:sym<attr>($/) {

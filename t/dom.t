@@ -4,44 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-my $dom = DOM::Tiny.parse(q:to/EOF/);
-<html>
-  <head>
-    <title>Foo</title>
-  </head>
-  <body>
-    <div id="container">
-      <div id="header">
-        <div id="logo">Hello World</div>
-        <div id="buttons">
-          <p id="foo">Foo</p>
-        </div>
-      </div>
-      <form>
-        <div id="buttons">
-          <p id="bar">Bar</p>
-        </div>
-      </form>
-      <div id="content">More stuff</div>
-    </div>
-  </body>
-</html>
-EOF
-my $p = $dom.find('body > #container > div p[id]');
-is $p[0].attr('id'), 'foo', 'right id attribute';
-is $p[1], Nil, 'no second result';
-is $p.elems, 1, 'right number of elements';
-# my @p;
-# @div = ();
-# $dom->find('div')->each(sub { push @div, $_->attr('id') });
-# $dom->find('p')->each(sub { push @p, $_->attr('id') });
-# is_deeply \@p, [qw(foo bar)], 'found all p elements';
-# my $ids = [qw(container header logo buttons buttons content)];
-# is_deeply \@div, $ids, 'found all div elements';
-# is_deeply [$dom->at('p')->ancestors->map('tag')->each],
-#   [qw(div div div body html)], 'right results';
-# is_deeply [$dom->at('html')->ancestors->each], [], 'no results';
-# is_deeply [$dom->ancestors->each],             [], 'no results';
 #
 # # Script tag
 # $dom = DOM::Tiny->new(<<EOF);

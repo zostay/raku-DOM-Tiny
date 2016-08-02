@@ -332,6 +332,7 @@ class Text is export is DocumentNode does TextNode {
 
 class Root is export is Node does HasChildren {
     method trimmable(Root:D:) { True }
+    method ancestor-nodes(Root:D:) { () }
     method render(:$xml) { self.render-children(:$xml) }
 }
 
