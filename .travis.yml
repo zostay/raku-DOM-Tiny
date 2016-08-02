@@ -1,0 +1,9 @@
+language: perl6
+install:
+  - rakudobrew build-panda
+  - panda installdeps .
+script:
+  - prove -v -e "perl6 --ll-exception -Ilib" t
+  - PANDA_SUBMIT_TESTREPORTS=1 panda install .
+after_success:
+  - panda list --installed --verbose
