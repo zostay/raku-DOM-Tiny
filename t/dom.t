@@ -6,10 +6,10 @@ use DOM::Tiny;
 
 # # Looks remotely like HTML
 # $dom = DOM::Tiny->new(
-#   '<!DOCTYPE H "-/W/D HT 4/E">â˜ƒ<title class=test>â™¥</title>â˜ƒ');
-# is $dom->at('title')->text, 'â™¥', 'right text';
-# is $dom->at('*')->text,     'â™¥', 'right text';
-# is $dom->at('.test')->text, 'â™¥', 'right text';
+#   '<!DOCTYPE H "-/W/D HT 4/E">☃<title class=test>♥</title>☃');
+# is $dom->at('title')->text, '♥', 'right text';
+# is $dom->at('*')->text,     '♥', 'right text';
+# is $dom->at('.test')->text, '♥', 'right text';
 #
 # # Replace elements
 # $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
@@ -22,8 +22,8 @@ use DOM::Tiny;
 # $dom->find('div')->each(sub { shift->replace('<p>test</p>') });
 # is "$dom", '<p>test</p><p>test</p>', 'right result';
 # $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
-# is $dom->replace('â™¥'), 'â™¥', 'right result';
-# is "$dom", 'â™¥', 'right result';
+# is $dom->replace('♥'), '♥', 'right result';
+# is "$dom", '♥', 'right result';
 # $dom->replace('<div>foo<p>lalala</p>bar</div>');
 # is "$dom", '<div>foo<p>lalala</p>bar</div>', 'right result';
 # is $dom->at('p')->replace(''), '<div>foobar</div>', 'right result';
@@ -34,14 +34,14 @@ use DOM::Tiny;
 # is "$dom", '<div>foo<p>lalala</p>bar</div>', 'right result';
 # $dom->find('p')->map(replace => '');
 # is "$dom", '<div>foobar</div>', 'right result';
-# $dom = DOM::Tiny->new('<div>â™¥</div>');
-# $dom->at('div')->content('â˜ƒ');
-# is "$dom", '<div>â˜ƒ</div>', 'right result';
-# $dom = DOM::Tiny->new('<div>â™¥</div>');
+# $dom = DOM::Tiny->new('<div>♥</div>');
+# $dom->at('div')->content('☃');
+# is "$dom", '<div>☃</div>', 'right result';
+# $dom = DOM::Tiny->new('<div>♥</div>');
 # $dom->at('div')->content("\x{2603}");
-# is $dom->to_string, '<div>â˜ƒ</div>', 'right result';
-# is $dom->at('div')->replace('<p>â™¥</p>')->root, '<p>â™¥</p>', 'right result';
-# is $dom->to_string, '<p>â™¥</p>', 'right result';
+# is $dom->to_string, '<div>☃</div>', 'right result';
+# is $dom->at('div')->replace('<p>♥</p>')->root, '<p>♥</p>', 'right result';
+# is $dom->to_string, '<p>♥</p>', 'right result';
 # is $dom->replace('<b>whatever</b>')->root, '<b>whatever</b>', 'right result';
 # is $dom->to_string, '<b>whatever</b>', 'right result';
 # $dom->at('b')->prepend('<p>foo</p>')->append('<p>bar</p>');
@@ -72,12 +72,12 @@ use DOM::Tiny;
 # is "$dom", '<div><p>test</p></div><div><p>test</p></div>', 'right result';
 # $dom->find('p')->each(sub { shift->content('') });
 # is "$dom", '<div><p></p></div><div><p></p></div>', 'right result';
-# $dom = DOM::Tiny->new('<div><p id="â˜ƒ" /></div>');
-# $dom->at('#â˜ƒ')->content('â™¥');
-# is "$dom", '<div><p id="â˜ƒ">â™¥</p></div>', 'right result';
+# $dom = DOM::Tiny->new('<div><p id="☃" /></div>');
+# $dom->at('#☃')->content('♥');
+# is "$dom", '<div><p id="☃">♥</p></div>', 'right result';
 # $dom = DOM::Tiny->new('<div>foo<p>lalala</p>bar</div>');
-# $dom->content('â™¥');
-# is "$dom", 'â™¥', 'right result';
+# $dom->content('♥');
+# is "$dom", '♥', 'right result';
 # is $dom->content('<div>foo<p>lalala</p>bar</div>'),
 #   '<div>foo<p>lalala</p>bar</div>', 'right result';
 # is "$dom", '<div>foo<p>lalala</p>bar</div>', 'right result';
@@ -382,15 +382,15 @@ use DOM::Tiny;
 # $dom->find('div[id="a"], div[id="c"]')->each(sub { push @div, shift->text });
 # is_deeply \@div, [qw(A C)], 'found all div elements with the right ids';
 # $dom = DOM::Tiny->new(
-#   '<div id="â˜ƒ">A</div><div id="b">B</div><div id="â™¥x">C</div>');
+#   '<div id="☃">A</div><div id="b">B</div><div id="♥x">C</div>');
 # @div = ();
-# $dom->find('#â˜ƒ, #â™¥x')->each(sub { push @div, shift->text });
+# $dom->find('#☃, #♥x')->each(sub { push @div, shift->text });
 # is_deeply \@div, [qw(A C)], 'found all div elements with the right ids';
 # @div = ();
-# $dom->find('div#â˜ƒ, div#b')->each(sub { push @div, shift->text });
+# $dom->find('div#☃, div#b')->each(sub { push @div, shift->text });
 # is_deeply \@div, [qw(A B)], 'found all div elements with the right ids';
 # @div = ();
-# $dom->find('div[id="â˜ƒ"], div[id="â™¥x"]')
+# $dom->find('div[id="☃"], div[id="♥x"]')
 #   ->each(sub { push @div, shift->text });
 # is_deeply \@div, [qw(A C)], 'found all div elements with the right ids';
 #
@@ -624,7 +624,7 @@ use DOM::Tiny;
 # <ul>
 #     <li>A</li>
 #     <p>B</p>
-#     <li class="test â™¥">C</li>
+#     <li class="test ♥">C</li>
 #     <p>D</p>
 #     <li>E</li>
 #     <li>F</li>
@@ -633,11 +633,11 @@ use DOM::Tiny;
 #     <li>I</li>
 # </ul>
 # <div>
-#     <div class="â˜ƒ">J</div>
+#     <div class="☃">J</div>
 # </div>
 # <div>
 #     <a href="http://www.w3.org/DOM/">DOM</a>
-#     <div class="â˜ƒ">K</div>
+#     <div class="☃">K</div>
 #     <a href="http://www.w3.org/DOM/">DOM</a>
 # </div>
 # EOF
@@ -703,22 +703,22 @@ use DOM::Tiny;
 #   ->each(sub { push @e, shift->text });
 # is_deeply \@e, [qw(B C)], 'found second and third element';
 # @e = ();
-# $dom->find('ul :nth-child(-n+3):not(.â™¥)')->each(sub { push @e, shift->text });
+# $dom->find('ul :nth-child(-n+3):not(.♥)')->each(sub { push @e, shift->text });
 # is_deeply \@e, [qw(A B)], 'found first and second element';
 # @e = ();
-# $dom->find('ul :nth-child(-n+3):not([class$="â™¥"])')
+# $dom->find('ul :nth-child(-n+3):not([class$="♥"])')
 #   ->each(sub { push @e, shift->text });
 # is_deeply \@e, [qw(A B)], 'found first and second element';
 # @e = ();
-# $dom->find('ul :nth-child(-n+3):not(li[class$="â™¥"])')
+# $dom->find('ul :nth-child(-n+3):not(li[class$="♥"])')
 #   ->each(sub { push @e, shift->text });
 # is_deeply \@e, [qw(A B)], 'found first and second element';
 # @e = ();
-# $dom->find('ul :nth-child(-n+3):not([class$="â™¥"][class^="test"])')
+# $dom->find('ul :nth-child(-n+3):not([class$="♥"][class^="test"])')
 #   ->each(sub { push @e, shift->text });
 # is_deeply \@e, [qw(A B)], 'found first and second element';
 # @e = ();
-# $dom->find('ul :nth-child(-n+3):not(*[class$="â™¥"])')
+# $dom->find('ul :nth-child(-n+3):not(*[class$="♥"])')
 #   ->each(sub { push @e, shift->text });
 # is_deeply \@e, [qw(A B)], 'found first and second element';
 # @e = ();
@@ -750,8 +750,8 @@ use DOM::Tiny;
 #     <li>C</li>
 # </ul>
 # <h1>D</h1>
-# <p id="â™¥">E</p>
-# <p id="â˜ƒ">F<b>H</b></p>
+# <p id="♥">E</p>
+# <p id="☃">F<b>H</b></p>
 # <div>G</div>
 # EOF
 # is $dom->at('li ~ p')->text,       'B', 'right text';
@@ -773,25 +773,25 @@ use DOM::Tiny;
 # is $dom->at('p + div')->text,               'G', 'right text';
 # is $dom->at('ul + h1 + p + p + div')->text, 'G', 'right text';
 # is $dom->at('ul + h1 ~ p + div')->text,     'G', 'right text';
-# is $dom->at('h1 ~ #â™¥')->text,             'E', 'right text';
-# is $dom->at('h1 + #â™¥')->text,             'E', 'right text';
-# is $dom->at('#â™¥~#â˜ƒ')->text,             'F', 'right text';
-# is $dom->at('#â™¥+#â˜ƒ')->text,             'F', 'right text';
-# is $dom->at('#â™¥+#â˜ƒ>b')->text,           'H', 'right text';
-# is $dom->at('#â™¥ > #â˜ƒ'), undef, 'no result';
-# is $dom->at('#â™¥ #â˜ƒ'),   undef, 'no result';
-# is $dom->at('#â™¥ + #â˜ƒ + :nth-last-child(1)')->text,  'G', 'right text';
-# is $dom->at('#â™¥ ~ #â˜ƒ + :nth-last-child(1)')->text,  'G', 'right text';
-# is $dom->at('#â™¥ + #â˜ƒ ~ :nth-last-child(1)')->text,  'G', 'right text';
-# is $dom->at('#â™¥ ~ #â˜ƒ ~ :nth-last-child(1)')->text,  'G', 'right text';
-# is $dom->at('#â™¥ + :nth-last-child(2)')->text,         'F', 'right text';
-# is $dom->at('#â™¥ ~ :nth-last-child(2)')->text,         'F', 'right text';
-# is $dom->at('#â™¥ + #â˜ƒ + *:nth-last-child(1)')->text, 'G', 'right text';
-# is $dom->at('#â™¥ ~ #â˜ƒ + *:nth-last-child(1)')->text, 'G', 'right text';
-# is $dom->at('#â™¥ + #â˜ƒ ~ *:nth-last-child(1)')->text, 'G', 'right text';
-# is $dom->at('#â™¥ ~ #â˜ƒ ~ *:nth-last-child(1)')->text, 'G', 'right text';
-# is $dom->at('#â™¥ + *:nth-last-child(2)')->text,        'F', 'right text';
-# is $dom->at('#â™¥ ~ *:nth-last-child(2)')->text,        'F', 'right text';
+# is $dom->at('h1 ~ #♥')->text,             'E', 'right text';
+# is $dom->at('h1 + #♥')->text,             'E', 'right text';
+# is $dom->at('#♥~#☃')->text,             'F', 'right text';
+# is $dom->at('#♥+#☃')->text,             'F', 'right text';
+# is $dom->at('#♥+#☃>b')->text,           'H', 'right text';
+# is $dom->at('#♥ > #☃'), undef, 'no result';
+# is $dom->at('#♥ #☃'),   undef, 'no result';
+# is $dom->at('#♥ + #☃ + :nth-last-child(1)')->text,  'G', 'right text';
+# is $dom->at('#♥ ~ #☃ + :nth-last-child(1)')->text,  'G', 'right text';
+# is $dom->at('#♥ + #☃ ~ :nth-last-child(1)')->text,  'G', 'right text';
+# is $dom->at('#♥ ~ #☃ ~ :nth-last-child(1)')->text,  'G', 'right text';
+# is $dom->at('#♥ + :nth-last-child(2)')->text,         'F', 'right text';
+# is $dom->at('#♥ ~ :nth-last-child(2)')->text,         'F', 'right text';
+# is $dom->at('#♥ + #☃ + *:nth-last-child(1)')->text, 'G', 'right text';
+# is $dom->at('#♥ ~ #☃ + *:nth-last-child(1)')->text, 'G', 'right text';
+# is $dom->at('#♥ + #☃ ~ *:nth-last-child(1)')->text, 'G', 'right text';
+# is $dom->at('#♥ ~ #☃ ~ *:nth-last-child(1)')->text, 'G', 'right text';
+# is $dom->at('#♥ + *:nth-last-child(2)')->text,        'F', 'right text';
+# is $dom->at('#♥ ~ *:nth-last-child(2)')->text,        'F', 'right text';
 #
 # # Adding nodes
 # $dom = DOM::Tiny->new(<<EOF);
@@ -2035,8 +2035,8 @@ use DOM::Tiny;
 # # "0"
 # $dom = DOM::Tiny->new('0');
 # is "$dom", '0', 'right result';
-# $dom->append_content('â˜ƒ');
-# is "$dom", '0â˜ƒ', 'right result';
+# $dom->append_content('☃');
+# is "$dom", '0☃', 'right result';
 # is $dom->parse('<!DOCTYPE 0>'),  '<!DOCTYPE 0>',  'successful roundtrip';
 # is $dom->parse('<!--0-->'),      '<!--0-->',      'successful roundtrip';
 # is $dom->parse('<![CDATA[0]]>'), '<![CDATA[0]]>', 'successful roundtrip';
