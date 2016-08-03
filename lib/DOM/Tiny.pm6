@@ -212,13 +212,18 @@ method previous-node(DOM::Tiny:D:) {
 
 method remove(DOM::Tiny:D:) { self.replace('') }
 
-method replace(DOM::Tiny:D: Str:D $html) {
+multi method replace(DOM::Tiny:D: Str:D $html) {
+    self.replace(DOM::Tiny.parse($html));
+}
+
+multi method replace(DOM::Tiny:D: DOM::Tiny:D $tree) {
     if $!tree ~~ Root {
-        self.parse($html);
+        $!tree = $tree.tree;
+        self;
     }
     else {
-        self!replace: $!tree.parent, $!tree,
-            DOM::Tiny::HTML::_parse($html).child-nodes
+        self!replace: $!tree.parent, $!tree, $tree.tree.child-nodes;
+        $.parent;
     }
 }
 
@@ -228,7 +233,7 @@ method root(DOM::Tiny:D:) {
 
 method strip(DOM::Tiny:D:) {
     if $!tree ~~ Tag {
-        self!replace: $!tree.children, $!tree, $!tree.child-nodes;
+        self!replace: $!tree.parent, $!tree, $!tree.child-nodes;
     }
     else {
         self;

@@ -221,13 +221,13 @@ grammar Selector {
         ':' <pseudo-class>
     }
     token selector:sym<tag> {
-        [ <.escape> \s | '\\.' | <-[,.#:\[\s>~+]> ]+ #]
+        [ <.escape> \s | '\\.' | <-[,.#:\[\s>~+()]> ]+ #]
     }
     token selector:sym<any> { '*' }
 
     proto rule pseudo-class { * }
-    rule pseudo-class:sym<not>   { not <TOP> }
-    rule pseudo-class:sym<nth>   { <nth-x> <equation> }
+    rule pseudo-class:sym<not>   { not '(' <TOP> ')' }
+    rule pseudo-class:sym<nth>   { <nth-x> '(' <equation> ')' }
     rule pseudo-class:sym<first> { <first-x> }
     rule pseudo-class:sym<last>  { <last-x> }
     rule pseudo-class:sym<only>  { <only-x> }
