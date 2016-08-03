@@ -112,6 +112,14 @@ method children(DOM::Tiny:D: Str $css?) {
     self!select($!tree.child-nodes(:tags-only), $css);
 }
 
+multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D {
+    $!tree.children = do given $tree.type {
+        when Root { $tree.tree.children }
+        default   { $tree.tree }
+    }
+    self;
+}
+
 multi method content(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
     $!tree.content = $html;
     self;
