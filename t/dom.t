@@ -4,27 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Mixed search and tree walk
-# $dom = DOM::Tiny->new(<<EOF);
-# <table>
-#   <tr>
-#     <td>text1</td>
-#     <td>text2</td>
-#   </tr>
-# </table>
-# EOF
-# my @data;
-# for my $tr ($dom->find('table tr')->each) {
-#   for my $td (@{$tr->children}) {
-#     push @data, $td->tag, $td->all_text;
-#   }
-# }
-# is $data[0], 'td',    'right tag';
-# is $data[1], 'text1', 'right text';
-# is $data[2], 'td',    'right tag';
-# is $data[3], 'text2', 'right text';
-# is $data[4], undef,   'no tag';
-#
 # # RSS
 # $dom = DOM::Tiny->new(<<EOF);
 # <?xml version="1.0" encoding="UTF-8"?>
