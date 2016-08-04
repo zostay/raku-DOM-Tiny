@@ -171,7 +171,7 @@ method namespace(DOM::Tiny:D:) returns Str {
 
     # Extract namespace prefix and search parents
     my $ns = $!tree.tag ~~ /^ (.*?) ':' / ?? "xmlns:$/[0]" !! Str;
-    for $!tree.ancestor-nodes -> $node {
+    for flat $!tree, $!tree.ancestor-nodes -> $node {
         # Namespace for prefix
         with $ns {
             for $node.attr.kv -> $name, $value {
