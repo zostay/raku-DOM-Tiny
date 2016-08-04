@@ -24,7 +24,7 @@ my class AncestorJoiner is Joiner {
                     shift @ancestors;
                     next COMBINATION;
                 }
-                elsif self.no-gaps {
+                elsif $.no-gaps {
                     return False;
                 }
             }
@@ -55,7 +55,7 @@ my class CousinJoiner is Joiner {
                 if $current ~~ $selector {
                     next COMBINATION;
                 }
-                elsif self.no-gaps {
+                elsif $.no-gaps {
                     return False;
                 }
             }
@@ -124,9 +124,9 @@ my class TagMatch {
     has $.name;
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
-        my $name = $!name;
+        my $unescaped = _unescape($!name);
         $current ~~ Tag && (
-            $current.tag ~~ $name | / [ ^ | ':' ] "$name" $/
+            $current.tag ~~ $!name | / [ ^ | ':' ] "$unescaped" $/
         );
     }
 
@@ -224,7 +224,7 @@ grammar Selector {
         ':' <pseudo-class>
     }
     token selector:sym<tag> {
-        [ <.escape> \s | '\\.' | <-[,.#:\[\s>~+()]> ]+ #]
+        [ <.escape> \s | '\\' . | <-[,.#:\[\s>~+()]> ]+ #]
     }
     token selector:sym<any> { '*' }
 
@@ -424,7 +424,7 @@ class Compiler {
 has $.tree is rw;
 
 method matches(DOM::Tiny::CSS:D: Str:D $css) returns Bool:D {
-    my $*TREE-CONTEXT = $!tree;
+    my $*TREE-CONTEXT = $!tree.root;
     ?($!tree ~~ _compile($css));
 }
 

@@ -16,13 +16,16 @@ has Bool $.xml = False;
 multi method Bool(DOM::Tiny:U:) returns Bool:D { False }
 multi method Bool(DOM::Tiny:D:) returns Bool:D { True }
 
-method AT-POS(DOM::Tiny:D: Int:D $i) is rw { self.child-nodes[$i] }
+method AT-POS(DOM::Tiny:D: Int:D $i) is rw returns DOM::Tiny {
+    return-rw self.child-nodes[$i]
+}
 method list(DOM::Tiny:D:) { self.child-nodes }
 
 method AT-KEY(DOM::Tiny:D: Str:D $k) is rw {
+    my $tree = self;
     Proxy.new(
-        FETCH => method ()   { self.attr($k) },
-        STORE => method ($v) { self.attr($k, $v) },
+        FETCH => method ()   { $tree.attr($k) },
+        STORE => method ($v) { $tree.attr($k, $v) },
     );
 }
 method hash(DOM::Tiny:D:) { self.attr }
@@ -89,17 +92,19 @@ method at(DOM::Tiny:D: Str:D $css) returns DOM::Tiny {
 }
 
 multi method attr(DOM::Tiny:D: Str:D $name) returns Str {
-    $.attr{ $name } // Str;
+    return Str unless $!tree ~~ Tag;
+    $!tree.attr{ $name } // Str;
 }
 
 multi method attr(DOM::Tiny:D: Str:D $name, Str:D $value) returns DOM::Tiny:D {
-    $.attr{ $name } = $value;
+    return self unless $!tree ~~ Tag;
+    $!tree.attr{ $name } = $value;
     self;
 }
 
 multi method attr(DOM::Tiny:D: *%values) {
     return $!tree !~~ Tag ?? {} !! $!tree.attr unless %values;
-    $.attr{ keys %values } = values %values;
+    $!tree.attr{ keys %values } = values %values;
     self;
 }
 
@@ -160,7 +165,7 @@ method namespace(DOM::Tiny:D:) returns Str {
 
     # Extract namespace prefix and search parents
     my $ns = $!tree.tag ~~ /^ (.*?) ':' / ?? "xmlns:$/[0]" !! Str;
-    for $!tree.ancestors -> $node {
+    for $!tree.ancestor-nodes -> $node {
         # Namespace for prefix
         with $ns {
             for $node.attr.kv -> $name, $value {
