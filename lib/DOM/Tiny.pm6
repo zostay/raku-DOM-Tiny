@@ -103,9 +103,15 @@ multi method attr(DOM::Tiny:D: Str:D $name, Str:D $value) returns DOM::Tiny:D {
 }
 
 multi method attr(DOM::Tiny:D: *%values) {
-    return $!tree !~~ Tag ?? {} !! $!tree.attr unless %values;
-    $!tree.attr{ keys %values } = values %values;
-    self;
+    if %values {
+        $!tree.attr{ keys %values } = values %values
+            if $!tree ~~ Tag;
+
+        self;
+    }
+    else {
+        $!tree ~~ Tag ?? $!tree.attr !! {};
+    }
 }
 
 method child-nodes(DOM::Tiny:D: Bool :$tags-only = False) {
@@ -276,7 +282,7 @@ multi method tag(DOM::Tiny:D: Str:D $tag) returns DOM::Tiny:D {
     self;
 }
 
-method text(DOM::Tiny:D: Bool :$trim, Bool :$recurse) {
+method text(DOM::Tiny:D: Bool :$trim = True, Bool :$recurse = False) {
     $!tree.text(:$trim, :$recurse);
 }
 method render(DOM::Tiny:D:) {

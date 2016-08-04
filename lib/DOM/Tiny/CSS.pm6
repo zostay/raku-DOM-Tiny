@@ -450,7 +450,7 @@ my sub _compile($css) {
     ).made;
 }
 
-my sub _unescape($value is copy) {
+my multi _unescape(Str:D $value is copy) {
     # Remove escaped newlines
     $value .= trans([ "\\\n" ] => [ '' ]);
 
@@ -464,3 +464,5 @@ my sub _unescape($value is copy) {
 
     $value;
 }
+
+my multi _unescape($value) { $value }
