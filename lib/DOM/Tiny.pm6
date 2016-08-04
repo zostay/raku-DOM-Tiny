@@ -27,8 +27,9 @@ method AT-KEY(DOM::Tiny:D: Str:D $k) is rw {
 }
 method hash(DOM::Tiny:D:) { self.attr }
 
-multi method parse(DOM::Tiny:U: Str:D $html, Bool :$xml = False) returns DOM::Tiny:D {
+multi method parse(DOM::Tiny:U: Str:D $html, Bool :$xml is copy) returns DOM::Tiny:D {
     my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
+    $xml //= False;
     DOM::Tiny.new(:$tree, :$xml);
 }
 
@@ -51,26 +52,26 @@ method ancestors(DOM::Tiny:D: Str $selector?) {
     self!select(self.tree.ancestor-nodes, $selector);
 }
 
-method append(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
+method append(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
         $!tree.parent.children.append:
-            _link($!tree.parent, DOM::Tiny::HTML::_parse($html).child-nodes)
+            _link($!tree.parent, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes)
     }
 
     self;
 }
 
-method append-content(DOM::Tiny:D: Str:D $html) {
+method append-content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) {
     if $!tree ~~ HasChildren {
-        my @children = DOM::Tiny::HTML::_parse($html, :$!xml).children;
+        my @children = DOM::Tiny::HTML::_parse($html, :$xml).children;
         $!tree.children.append:
-            _link($!tree, DOM::Tiny::HTML::_parse($html, :$!xml).children);
+            _link($!tree, DOM::Tiny::HTML::_parse($html, :$xml).children);
         self;
     }
     elsif $!tree ~~ TextNode {
         my $parent = $!tree.parent;
         $parent.children.append:
-            _link($parent, DOM::Tiny::HTML::_parse($html, :$!xml).children);
+            _link($parent, DOM::Tiny::HTML::_parse($html, :$xml).children);
         $.parent;
     }
     else {
@@ -113,15 +114,24 @@ method children(DOM::Tiny:D: Str $css?) {
 }
 
 multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D {
-    $!tree.children = do given $tree.type {
-        when Root { $tree.tree.children }
-        default   { $tree.tree }
+    given $tree.type {
+        when Root        { $!tree.content($tree.tree.children) }
+        default          { $!tree.content($tree) }
     }
     self;
 }
 
-multi method content(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
-    $!tree.content = $html;
+multi method content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
+    if $.type ~~ HasChildren {
+        my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
+        self.content(DOM::Tiny.new(:$tree, :$xml));
+    }
+
+    # Skip parsing if we can
+    else {
+        $!tree.content($html);
+    }
+
     self;
 }
 
@@ -141,7 +151,9 @@ method following(DOM::Tiny:D: Str $css?) {
 }
 method following-nodes(DOM::Tiny:D:) { self!siblings()<after> }
 
-method matches(DOM::Tiny:D: Str:D $css) { $.css.matches($css) }
+method matches(DOM::Tiny:D: Str:D $css) returns Bool:D {
+    $.css.matches($css);
+}
 
 method namespace(DOM::Tiny:D:) returns Str {
     return Nil if $!tree !~~ Tag;
@@ -187,23 +199,23 @@ method preceding-nodes(DOM::Tiny:D:) {
     self!siblings()<before>;
 }
 
-method prepend(DOM::Tiny:D: Str:D $html) returns DOM::Tiny:D {
+method prepend(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
         $!tree.parent.children.prepend:
-            _link($!tree.parent, DOM::Tiny::HTML::_parse($html).child-nodes);
+            _link($!tree.parent, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes);
     }
 
     self;
 }
-method prepend-content(DOM::Tiny:D: Str:D $html) {
+method prepend-content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) {
     if $!tree ~~ HasChildren {
         $!tree.children.prepend:
-            _link($!tree, DOM::Tiny::HTML::_parse($html).child-nodes);
+            _link($!tree, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes);
     }
     elsif $!tree ~~ TextNode {
         my $parent = $!tree.parent;
         $parent.children.prepend:
-            _link($parent, DOM::Tiny::HTML::_parse($html, :$!xml).children);
+            _link($parent, DOM::Tiny::HTML::_parse($html, :$xml).children);
         $.parent;
     }
     else {
@@ -236,7 +248,7 @@ multi method replace(DOM::Tiny:D: DOM::Tiny:D $tree) {
 }
 
 method root(DOM::Tiny:D:) {
-    $!tree ~~ Root ?? self !! $!tree.root
+    $!tree ~~ Root ?? self !! DOM::Tiny.new(:tree($!tree.root), :$!xml);
 }
 
 method strip(DOM::Tiny:D:) {
@@ -290,11 +302,11 @@ method val(DOM::Tiny:D:) returns Str {
     _val($.type, $.tag, self);
 }
 
-method wrap(DOM::Tiny:D: Str:D $html) {
-    _wrap($!tree.parent, ($!tree,), $html);
+method wrap(DOM::Tiny:D: Str:D $html, Bool :$xml = $!xml) {
+    _wrap($!tree.parent, ($!tree,), $html, :$xml);
     self
 }
-method wrap-content(DOM::Tiny:D: Str:D $html) {
+method wrap-content(DOM::Tiny:D: Str:D $html, Bool :$xml = $!xml) {
     _wrap($!tree, $!tree.children, $html) if $!tree ~~ HasChildren;
     self
 }
@@ -348,8 +360,8 @@ method !siblings(:$tags-only = False, :$pos) {
     %split;
 }
 
-my sub _wrap($parent, @nodes, $html) {
-    my $innermost = my $wrapper = DOM::Tiny::HTML::_parse($html);
+my sub _wrap($parent, @nodes, $html, :$xml! is copy) {
+    my $innermost = my $wrapper = DOM::Tiny::HTML::_parse($html, :$xml);
     while $innermost.child-nodes(:tags-only)[0] -> $next-inner {
         $innermost = $next-inner;
     }

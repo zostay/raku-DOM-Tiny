@@ -200,14 +200,18 @@ role HasChildren is export {
         }
     }
 
-    method content(HasChildren:D:) is rw {
-        my $tree = self;
-        Proxy.new(
-            FETCH => method () { $tree.render-children },
-            STORE => method ($html) {
-                $tree.children = DOM::Tiny::HTML::_parse($html).children;
-            },
-        );
+    multi method content(HasChildren:D:) {
+        self.render-children;
+    }
+
+    multi method content(HasChildren:D: Str:D $html) {
+        my $xml;
+        my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
+        @!children = $tree.children;
+    }
+
+    multi method content(HasChildren:D: Node:D @children) {
+        @!children = @children;
     }
 
     method !read-text(:$recurse, :$trim is copy) {
@@ -256,7 +260,9 @@ role TextNode is export {
 
     multi method text(TextNode:D:) is rw { return-rw $!text }
 
-    method content() is rw { $!text }
+    multi method content(TextNode:D:) { $!text }
+    multi method content(TextNode:D: Str:D $text) { $!text = $text }
+    multi method content(TextNode:D: Node:D @children) { $!text = [~] @children».Str }
 }
 
 class CDATA is export is DocumentNode does TextNode {
@@ -266,7 +272,9 @@ class CDATA is export is DocumentNode does TextNode {
 class Comment is export is DocumentNode {
     has Str $.comment is rw = '';
 
-    method content() is rw { $!comment }
+    multi method content(Comment:D:) { $!comment }
+    multi method content(Comment:D: Str:D $text) { $!comment = $text }
+    multi method content(Comment:D: Node:D @children) { $!comment = [~] @children».Str }
 
     method render(:$xml) { '<!--' ~ $!comment ~ '-->' }
 }
@@ -274,7 +282,9 @@ class Comment is export is DocumentNode {
 class Doctype is export is DocumentNode {
     has Str $.doctype is rw = '';
 
-    method content() is rw { $!doctype }
+    multi method content(Doctype:D:) { $!doctype }
+    multi method content(Doctype:D: Str:D $text) { $!doctype = $text }
+    multi method content(Doctype:D: Node:D @children) { $!doctype = [~] @children».Str }
 
     method render(:$xml) { '<!DOCTYPE ' ~ $!doctype ~ '>' }
 }
@@ -282,7 +292,9 @@ class Doctype is export is DocumentNode {
 class PI is export is DocumentNode {
     has Str $.pi is rw = '';
 
-    method content() is rw { $!pi }
+    multi method content(PI:D:) { $!pi }
+    multi method content(PI:D: Str:D $text) { $!pi = $text }
+    multi method content(PI:D: Node:D @children) { $!pi = [~] @children».Str }
 
     method render(:$xml) { '<?' ~ $!pi ~ '?>' }
 }
@@ -338,6 +350,10 @@ class Root is export is Node does HasChildren {
 
 class TreeMaker {
     has Bool $.xml = False;
+
+    submethod BUILD(:$xml! is rw) {
+        $!xml := $xml;
+    }
 
     my sub _end($end, $xml, $current is rw) {
 
@@ -563,10 +579,9 @@ class TreeMaker {
     method attr-value($/) { make html-unescape ~$<raw-value> }
 }
 
-our sub _parse($html, :$xml = False) {
+our sub _parse($html, :$xml! is rw) {
     my $grammar = $xml ?? XMLTokenizer !! HTMLTokenizer;
-    $grammar.parse($html,
-        actions => DOM::Tiny::HTML::TreeMaker.new(:$xml),
-    ).made;
+    my $actions = DOM::Tiny::HTML::TreeMaker.new(:$xml);
+    $grammar.parse($html, :$actions).made;
 }
 

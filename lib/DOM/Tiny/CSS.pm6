@@ -124,7 +124,10 @@ my class TagMatch {
     has $.name;
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
-        $current ~~ Tag && $current.tag ~~ $!name
+        my $name = $!name;
+        $current ~~ Tag && (
+            $current.tag ~~ $name | / [ ^ | ':' ] "$name" $/
+        );
     }
 
     multi method ACCEPT(::?CLASS:D: $) { False }
@@ -422,7 +425,7 @@ has $.tree is rw;
 
 method matches(DOM::Tiny::CSS:D: Str:D $css) returns Bool:D {
     my $*TREE-CONTEXT = $!tree;
-    $!tree ~~ _compile($css);
+    ?($!tree ~~ _compile($css));
 }
 
 method select(DOM::Tiny::CSS:D: Str:D $css) {
