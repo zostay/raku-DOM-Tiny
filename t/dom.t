@@ -4,17 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Empty attributes
-# $dom = DOM::Tiny->new(qq{<div test="" test2='' />});
-# is $dom->at('div')->attr->{test},  '', 'empty attribute value';
-# is $dom->at('div')->attr->{test2}, '', 'empty attribute value';
-# is $dom->at('[test]')->tag,  'div', 'right tag';
-# is $dom->at('[test2]')->tag, 'div', 'right tag';
-# is $dom->at('[test3]'), undef, 'no result';
-# is $dom->at('[test=""]')->tag,  'div', 'right tag';
-# is $dom->at('[test2=""]')->tag, 'div', 'right tag';
-# is $dom->at('[test3=""]'), undef, 'no result';
-#
 # # Multi-line attribute
 # $dom = DOM::Tiny->new(qq{<div class="line1\nline2" />});
 # is $dom->at('div')->attr->{class}, "line1\nline2", 'multi-line attribute value';
