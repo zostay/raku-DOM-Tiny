@@ -4,13 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Attributes on multiple lines
-# $dom = DOM::Tiny->new("<div test=23 id='a' \n class='x' foo=bar />");
-# is $dom->at('div.x')->attr('test'),        23,  'right attribute';
-# is $dom->at('[foo="bar"]')->attr('class'), 'x', 'right attribute';
-# is $dom->at('div')->attr(baz => undef)->root->to_string,
-#   '<div baz class="x" foo="bar" id="a" test="23"></div>', 'right result';
-#
 # # Markup characters in attribute values
 # $dom = DOM::Tiny->new(qq{<div id="<a>" \n test='='>Test<div id='><' /></div>});
 # is $dom->at('div[id="<a>"]')->attr->{test}, '=', 'right attribute';
