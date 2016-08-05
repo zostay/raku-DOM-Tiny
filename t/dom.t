@@ -4,12 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Result and iterator order
-# $dom = DOM::Tiny->new('<a><b>1</b></a><b>2</b><b>3</b>');
-# my @numbers;
-# $dom->find('b')->each(sub { push @numbers, pop, shift->text });
-# is_deeply \@numbers, [1, 1, 2, 2, 3, 3], 'right order';
-#
 # # Attributes on multiple lines
 # $dom = DOM::Tiny->new("<div test=23 id='a' \n class='x' foo=bar />");
 # is $dom->at('div.x')->attr('test'),        23,  'right attribute';
