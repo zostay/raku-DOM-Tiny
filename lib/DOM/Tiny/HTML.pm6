@@ -351,10 +351,6 @@ class Root is export is Node does HasChildren {
 class TreeMaker {
     has Bool $.xml = False;
 
-    submethod BUILD(:$xml! is rw) {
-        $!xml := $xml;
-    }
-
     my sub _end($end, $xml, $current is rw) {
 
         # Search stack for start tag
@@ -407,7 +403,7 @@ class TreeMaker {
     method TOP($/) {
         my $current = my $tree = Root.new;
 
-        my $xml = $.xml // False;
+        my $xml = $.xml;
         for $<ml-token>».made -> %markup {
             given %markup<type> {
                 when Tag {
@@ -554,7 +550,6 @@ class TreeMaker {
     }
 
     method markup:sym<pi>($/) {
-        $!xml = True if !defined $!xml && (~$<pi>) ~~ /^ xml >>/;
         make {
             type => PI,
             pi   => ~$<pi>,
@@ -579,7 +574,8 @@ class TreeMaker {
     method attr-value($/) { make html-unescape ~$<raw-value> }
 }
 
-our sub _parse($html, :$xml! is rw) {
+our sub _parse($html, Bool :$xml! is rw) {
+    $xml = ?($html ~~ /^ \s* '<?xml' /) without $xml;
     my $grammar = $xml ?? XMLTokenizer !! HTMLTokenizer;
     my $actions = DOM::Tiny::HTML::TreeMaker.new(:$xml);
     $grammar.parse($html, :$actions).made;

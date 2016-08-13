@@ -4,57 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Pseudo-classes
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <form action="/foo">
-#     <input type="text" name="user" value="test" />
-#     <input type="checkbox" checked="checked" name="groovy">
-#     <select name="a">
-#         <option value="b">b</option>
-#         <optgroup label="c">
-#             <option value="d">d</option>
-#             <option selected="selected" value="e">E</option>
-#             <option value="f">f</option>
-#         </optgroup>
-#         <option value="g">g</option>
-#         <option selected value="h">H</option>
-#     </select>
-#     <input type="submit" value="Ok!" />
-#     <input type="checkbox" checked name="I">
-#     <p id="content">test 123</p>
-#     <p id="no_content"><? test ?><!-- 123 --></p>
-# </form>
-# EOF
-# is $dom.find(':root').[0].tag,     'form', 'right tag';
-# is $dom.find('*:root').[0].tag,    'form', 'right tag';
-# is $dom.find('form:root').[0].tag, 'form', 'right tag';
-# is $dom.find(':root').[1], Nil, 'no result';
-# is $dom.find(':checked').[0].attr.{name},        'groovy', 'right name';
-# is $dom.find('option:checked').[0].attr.{value}, 'e',      'right value';
-# is $dom.find(':checked').[1].text,  'E', 'right text';
-# is $dom.find('*:checked').[1].text, 'E', 'right text';
-# is $dom.find(':checked').[2].text,  'H', 'right name';
-# is $dom.find(':checked').[3].attr.{name}, 'I', 'right name';
-# is $dom.find(':checked').[4], Nil, 'no result';
-# is $dom.find('option[selected]').[0].attr.{value}, 'e', 'right value';
-# is $dom.find('option[selected]').[1].text, 'H', 'right text';
-# is $dom.find('option[selected]').[2], Nil, 'no result';
-# is $dom.find(':checked[value="e"]').[0].text,       'E', 'right text';
-# is $dom.find('*:checked[value="e"]').[0].text,      'E', 'right text';
-# is $dom.find('option:checked[value="e"]').[0].text, 'E', 'right text';
-# is $dom.at('optgroup option:checked[value="e"]').text, 'E', 'right text';
-# is $dom.at('select option:checked[value="e"]').text,   'E', 'right text';
-# is $dom.at('select :checked[value="e"]').text,         'E', 'right text';
-# is $dom.at('optgroup > :checked[value="e"]').text,     'E', 'right text';
-# is $dom.at('select *:checked[value="e"]').text,        'E', 'right text';
-# is $dom.at('optgroup > *:checked[value="e"]').text,    'E', 'right text';
-# is $dom.find(':checked[value="e"]').[1], Nil, 'no result';
-# is $dom.find(':empty').[0].attr.{name},      'user', 'right name';
-# is $dom.find('input:empty').[0].attr.{name}, 'user', 'right name';
-# is $dom.at(':empty[type^="ch"]').attr.{name}, 'groovy',  'right name';
-# is $dom.at('p').attr.{id},                    'content', 'right attribute';
-# is $dom.at('p:empty').attr.{id}, 'no_content', 'right attribute';
-#
 # # More pseudo-classes
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
 # <ul>
@@ -444,7 +393,7 @@ use DOM::Tiny;
 # is $dom.find('div > p').[5].text, 'F G', 'right text';
 # is $dom.find('div > p').[6].text, 'H',   'right text';
 # is $dom.find('div > p > p').[0], Nil, 'no results';
-# is $dom.at('div > p > img').attr.{src}, 'foo.png', 'right attribute';
+# is $dom.at('div > p > img').attr<src>, 'foo.png', 'right attribute';
 # is $dom.at('div > div').text, 'X', 'right text';
 #
 # # Optional "dt" and "dd" tags
@@ -517,13 +466,13 @@ use DOM::Tiny;
 #     <col id=bar>
 # </table>
 # EOF
-# is $dom.find('table > col').[0].attr.{id}, 'morefail', 'right attribute';
-# is $dom.find('table > col').[1].attr.{id}, 'fail',     'right attribute';
-# is $dom.find('table > colgroup > col').[0].attr.{id}, 'foo',
+# is $dom.find('table > col').[0].attr<id>, 'morefail', 'right attribute';
+# is $dom.find('table > col').[1].attr<id>, 'fail',     'right attribute';
+# is $dom.find('table > colgroup > col').[0].attr<id>, 'foo',
 #   'right attribute';
-# is $dom.find('table > colgroup > col').[1].attr.{class}, 'foo',
+# is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
 #   'right attribute';
-# is $dom.find('table > colgroup > col').[2].attr.{id}, 'bar',
+# is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
 #   'right attribute';
 #
 # # Optional "thead", "tbody", "tfoot", "tr", "th" and "td" tags
@@ -569,13 +518,13 @@ use DOM::Tiny;
 #       <td>E
 # </table>
 # EOF
-# is $dom.find('table > col').[0].attr.{id}, 'morefail', 'right attribute';
-# is $dom.find('table > col').[1].attr.{id}, 'fail',     'right attribute';
-# is $dom.find('table > colgroup > col').[0].attr.{id}, 'foo',
+# is $dom.find('table > col').[0].attr<id>, 'morefail', 'right attribute';
+# is $dom.find('table > col').[1].attr<id>, 'fail',     'right attribute';
+# is $dom.find('table > colgroup > col').[0].attr<id>, 'foo',
 #   'right attribute';
-# is $dom.find('table > colgroup > col').[1].attr.{class}, 'foo',
+# is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
 #   'right attribute';
-# is $dom.find('table > colgroup > col').[2].attr.{id}, 'bar',
+# is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
 #   'right attribute';
 # is $dom.at('table > thead > tr > th').text, 'A', 'right text';
 # is $dom.find('table > thead > tr > th').[1].text, 'D', 'right text';
@@ -597,11 +546,11 @@ use DOM::Tiny;
 #       <td>B
 # </table>
 # EOF
-# is $dom.find('table > colgroup > col').[0].attr.{id}, 'foo',
+# is $dom.find('table > colgroup > col').[0].attr<id>, 'foo',
 #   'right attribute';
-# is $dom.find('table > colgroup > col').[1].attr.{class}, 'foo',
+# is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
 #   'right attribute';
-# is $dom.find('table > colgroup > col').[2].attr.{id}, 'bar',
+# is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
 #   'right attribute';
 # is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
 #
@@ -1019,7 +968,7 @@ use DOM::Tiny;
 # ok $element.root.xml, 'XML mode active';
 # $dom.replace('<XMLTest2 /><XMLTest3 just="works" />');
 # ok $dom.xml, 'XML mode active';
-# $dom.at('XMLTest2').{foo} = Nil;
+# $dom.at('XMLTest2')<foo> = Nil;
 # is $dom, '<XMLTest2 foo="foo" /><XMLTest3 just="works" />', 'right result';
 #
 # # Ensure HTML semantics
@@ -1120,10 +1069,10 @@ use DOM::Tiny;
 # </a>
 # EOF
 # ok $dom.xml, 'XML mode active';
-# is $dom.at('a').{id}, 'one', 'right attribute';
+# is $dom.at('a')<id>, 'one', 'right attribute';
 # is-deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
 # is $dom.at('a').at('B').text, 'foo', 'right text';
-# is $dom.at('B').{class}, 'two', 'right attribute';
+# is $dom.at('B')<class>, 'two', 'right attribute';
 # is-deeply [sort keys %{$dom.at('a B')}], <class test>, 'right attributes';
 # is $dom.find('a B c').[0].text, 'bar', 'right text';
 # is $dom.find('a B c').[0]{id}, 'three', 'right attribute';
@@ -1151,10 +1100,10 @@ use DOM::Tiny;
 # </a>
 # EOF
 # ok !$dom.xml, 'XML mode not active';
-# is $dom.at('a').{id}, 'one', 'right attribute';
+# is $dom.at('a')<id>, 'one', 'right attribute';
 # is-deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
 # is $dom.at('a').at('b').text, 'foo', 'right text';
-# is $dom.at('b').{class}, 'two', 'right attribute';
+# is $dom.at('b')<class>, 'two', 'right attribute';
 # is-deeply [sort keys %{$dom.at('a b')}], <class test>, 'right attributes';
 # is $dom.find('a b c').[0].text, 'bar', 'right text';
 # is $dom.find('a b c').[0]{id}, 'three', 'right attribute';
@@ -1220,8 +1169,8 @@ use DOM::Tiny;
 #   </tr>
 # </table>
 # EOF
-# is $dom.find('table tr td').[0].at('div').{id}, 'A', 'right attribute';
-# is $dom.find('table tr td').[1].at('div').{id}, 'B', 'right attribute';
+# is $dom.find('table tr td').[0].at('div')<id>, 'A', 'right attribute';
+# is $dom.find('table tr td').[1].at('div')<id>, 'B', 'right attribute';
 # is $dom.find('table tr td').[2], Nil, 'no result';
 # is $dom.find('table tr td').size, 2, 'right number of elements';
 # is "$dom", q:to/EOF/, 'right result';
@@ -1559,7 +1508,7 @@ use DOM::Tiny;
 #
 # # "image"
 # my $dom = DOM::Tiny.parse('<image src="foo.png">test');
-# is $dom.at('img').{src}, 'foo.png', 'right attribute';
+# is $dom.at('img')<src>, 'foo.png', 'right attribute';
 # is "$dom", '<img src="foo.png">test', 'right result';
 #
 # # "title"
