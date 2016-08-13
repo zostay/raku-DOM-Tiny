@@ -4,72 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Whitespaces before closing bracket
-# my $dom = DOM::Tiny.parse('<div >content</div>');
-# ok $dom.at('div'), 'tag found';
-# is $dom.at('div').text,    'content', 'right text';
-# is $dom.at('div').content, 'content', 'right text';
-#
-# # Class with hyphen
-# my $dom = DOM::Tiny.parse('<div class="a">A</div><div class="a-1">A1</div>');
-# my @div = $dom.find('.a').map({ .text });
-# is_deeply @div, ['A'], 'found first element only';
-# @div = $dom.find('.a-1').map({ .text });
-# is_deeply @div, ['A1'], 'found last element only';
-#
-# # Defined but false text
-# my $dom = DOM::Tiny.parse(
-#   '<div><div id="a">A</div><div id="b">B</div></div><div id="0">0</div>');
-# my @div = $dom.find('div[id]').map({ .text });
-# is_deeply @div, [qw(A B 0)], 'found all div elements with id';
-#
-# # Empty tags
-# my $dom = DOM::Tiny.parse('<hr /><br/><br id="br"/><br />');
-# is "$dom", '<hr><br><br id="br"><br>', 'right result';
-# is $dom.at('br').content, '', 'empty result';
-#
-# # Inner XML
-# my $dom = DOM::Tiny.parse('<a>xxx<x>x</x>xxx</a>');
-# is $dom.at('a').content, 'xxx<x>x</x>xxx', 'right result';
-# is $dom.content, '<a>xxx<x>x</x>xxx</a>', 'right result';
-#
-# # Multiple selectors
-# my $dom = DOM::Tiny.parse(
-#   '<div id="a">A</div><div id="b">B</div><div id="c">C</div><p>D</p>');
-# my @div = $dom.find('p, div').map({ .text });
-# is_deeply @div, [qw(A B C D)], 'found all elements';
-# @div = $dom.find('#a, #c').map({ .text });
-# is_deeply @div, [qw(A C)], 'found all div elements with the right ids';
-# @div = $dom.find('div#a, div#b').map({ .text });
-# is_deeply @div, [qw(A B)], 'found all div elements with the right ids';
-# @div = $dom.find('div[id="a"], div[id="c"]').map({ .text });
-# is_deeply @div, [qw(A C)], 'found all div elements with the right ids';
-# my $dom = DOM::Tiny.parse(
-#   '<div id="☃">A</div><div id="b">B</div><div id="♥x">C</div>');
-# @div = $dom.find('#☃, #♥x').map({ .text });
-# is_deeply @div, [qw(A C)], 'found all div elements with the right ids';
-# @div = $dom.find('div#☃, div#b').map({ .text });
-# is_deeply @div, [qw(A B)], 'found all div elements with the right ids';
-# my @div = $dom.find('div[id="☃"], div[id="♥x"]')\
-#   .map({ .text });
-# is_deeply @div, [qw(A C)], 'found all div elements with the right ids';
-#
-# # Multiple attributes
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <div foo="bar" bar="baz">A</div>
-# <div foo="bar">B</div>
-# <div foo="bar" bar="baz">C</div>
-# <div foo="baz" bar="baz">D</div>
-# EOF
-# my @div = $dom.find('div[foo="bar"][bar="baz"]').map({ .text });
-# is_deeply @div, [qw(A C)], 'found all div elements with the right atributes';
-# my @div = $dom.find('div[foo^="b"][foo$="r"]').map({ .text });
-# is_deeply @div, [qw(A B C)], 'found all div elements with the right atributes';
-# is $dom.at('[foo="bar"]').previous, Nil, 'no previous sibling';
-# is $dom.at('[foo="bar"]').next.text, 'B', 'right text';
-# is $dom.at('[foo="bar"]').next.previous.text, 'A', 'right text';
-# is $dom.at('[foo="bar"]').next.next.next.next, Nil, 'no next sibling';
-#
 # # Pseudo-classes
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
 # <form action="/foo">
@@ -135,11 +69,11 @@ use DOM::Tiny;
 # </ul>
 # EOF
 # my @li = $dom.find('li:nth-child(odd)').map({ .text });
-# is_deeply @li, [qw(A C E G)], 'found all odd li elements';
+# is-deeply @li, <A C E G>, 'found all odd li elements';
 # @li = $dom.find('li:NTH-CHILD(ODD)').map({ .text });
-# is_deeply @li, [qw(A C E G)], 'found all odd li elements';
+# is-deeply @li, <A C E G>, 'found all odd li elements';
 # @li = $dom.find('li:nth-last-child(odd)').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all odd li elements';
+# is-deeply @li, <B D F H>, 'found all odd li elements';
 # is $dom.find(':nth-child(odd)').[0].tag,      'ul', 'right tag';
 # is $dom.find(':nth-child(odd)').[1].text,     'A',  'right text';
 # is $dom.find(':nth-child(1)').[0].tag,        'ul', 'right tag';
@@ -149,85 +83,85 @@ use DOM::Tiny;
 # is $dom.find(':nth-last-child(1)').[0].tag,  'ul', 'right tag';
 # is $dom.find(':nth-last-child(1)').[1].text, 'H',  'right text';
 # @li = $dom.find('li:nth-child(2n+1)').map({ .text });
-# is_deeply @li, [qw(A C E G)], 'found all odd li elements';
+# is-deeply @li, <A C E G>, 'found all odd li elements';
 # @li = $dom.find('li:nth-child(2n + 1)').map({ .text });
-# is_deeply @li, [qw(A C E G)], 'found all odd li elements';
+# is-deeply @li, <A C E G>, 'found all odd li elements';
 # @li = $dom.find('li:nth-last-child(2n+1)').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all odd li elements';
+# is-deeply @li, <B D F H>, 'found all odd li elements';
 # @li = $dom.find('li:nth-child(even)').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all even li elements';
+# is-deeply @li, <B D F H>, 'found all even li elements';
 # @li = $dom.find('li:NTH-CHILD(EVEN)').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all even li elements';
+# is-deeply @li, <B D F H>, 'found all even li elements';
 # @li = $dom.find('li:nth-last-child( even )').map({ .text });
-# is_deeply @li, [qw(A C E G)], 'found all even li elements';
+# is-deeply @li, <A C E G>, 'found all even li elements';
 # @li = $dom.find('li:nth-child(2n+2)').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all even li elements';
+# is-deeply @li, <B D F H>, 'found all even li elements';
 # @li = $dom.find('li:nTh-chILd(2N+2)').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all even li elements';
+# is-deeply @li, <B D F H>, 'found all even li elements';
 # @li = $dom.find('li:nth-child( 2n + 2 )').map({ .text });
-# is_deeply @li, [qw(B D F H)], 'found all even li elements';
+# is-deeply @li, <B D F H>, 'found all even li elements';
 # @li = $dom.find('li:nth-last-child(2n+2)').map({ .text });
-# is_deeply @li, [qw(A C E G)], 'found all even li elements';
+# is-deeply @li, <A C E G>, 'found all even li elements';
 # @li = $dom.find('li:nth-child(4n+1)').map({ .text });
-# is_deeply @li, [qw(A E)], 'found the right li elements';
+# is-deeply @li, <A E>, 'found the right li elements';
 # @li = $dom.find('li:nth-last-child(4n+1)').map({ .text });
-# is_deeply @li, [qw(D H)], 'found the right li elements';
+# is-deeply @li, <D H>, 'found the right li elements';
 # @li = $dom.find('li:nth-child(4n+4)').map({ .text });
-# is_deeply @li, [qw(D H)], 'found the right li elements';
+# is-deeply @li, <D H>, 'found the right li elements';
 # @li = $dom.find('li:nth-last-child(4n+4)').map({ .text });
-# is_deeply @li, [qw(A E)], 'found the right li elements';
+# is-deeply @li, <A E>, 'found the right li elements';
 # @li = $dom.find('li:nth-child(4n)').map({ .text });
-# is_deeply @li, [qw(D H)], 'found the right li elements';
+# is-deeply @li, <D H>, 'found the right li elements';
 # @li = $dom.find('li:nth-child( 4n )').map({ .text });
-# is_deeply @li, [qw(D H)], 'found the right li elements';
+# is-deeply @li, <D H>, 'found the right li elements';
 # @li = $dom.find('li:nth-last-child(4n)').map({ .text });
-# is_deeply @li, [qw(A E)], 'found the right li elements';
+# is-deeply @li, <A E>, 'found the right li elements';
 # @li = $dom.find('li:nth-child(5n-2)').map({ .text });
-# is_deeply @li, [qw(C H)], 'found the right li elements';
+# is-deeply @li, <C H>, 'found the right li elements';
 # @li = $dom.find('li:nth-child( 5n - 2 )').map({ .text });
-# is_deeply @li, [qw(C H)], 'found the right li elements';
+# is-deeply @li, <C H>, 'found the right li elements';
 # @li = $dom.find('li:nth-last-child(5n-2)').map({ .text });
-# is_deeply @li, [qw(A F)], 'found the right li elements';
+# is-deeply @li, <A F>, 'found the right li elements';
 # @li = $dom.find('li:nth-child(-n+3)').map({ .text });
-# is_deeply @li, [qw(A B C)], 'found first three li elements';
+# is-deeply @li, <A B C>, 'found first three li elements';
 # @li = $dom.find('li:nth-child( -n + 3 )').map({ .text });
-# is_deeply @li, [qw(A B C)], 'found first three li elements';
+# is-deeply @li, <A B C>, 'found first three li elements';
 # @li = $dom.find('li:nth-last-child(-n+3)').map({ .text });
-# is_deeply @li, [qw(F G H)], 'found last three li elements';
+# is-deeply @li, <F G H>, 'found last three li elements';
 # @li = $dom.find('li:nth-child(-1n+3)').map({ .text });
-# is_deeply @li, [qw(A B C)], 'found first three li elements';
+# is-deeply @li, <A B C>, 'found first three li elements';
 # @li = $dom.find('li:nth-last-child(-1n+3)').map({ .text });
-# is_deeply @li, [qw(F G H)], 'found first three li elements';
+# is-deeply @li, <F G H>, 'found first three li elements';
 # @li = $dom.find('li:nth-child(3n)').map({ .text });
-# is_deeply @li, [qw(C F)], 'found every third li elements';
+# is-deeply @li, <C F>, 'found every third li elements';
 # @li = $dom.find('li:nth-last-child(3n)').map({ .text });
-# is_deeply @li, [qw(C F)], 'found every third li elements';
+# is-deeply @li, <C F>, 'found every third li elements';
 # @li = $dom.find('li:NTH-LAST-CHILD(3N)').map({ .text });
-# is_deeply @li, [qw(C F)], 'found every third li elements';
+# is-deeply @li, <C F>, 'found every third li elements';
 # @li = $dom.find('li:Nth-Last-Child(3N)').map({ .text });
-# is_deeply @li, [qw(C F)], 'found every third li elements';
+# is-deeply @li, <C F>, 'found every third li elements';
 # @li = $dom.find('li:nth-child( 3 )').map({ .text });
-# is_deeply @li, ['C'], 'found third li element';
+# is-deeply @li, ['C'], 'found third li element';
 # @li = $dom.find('li:nth-last-child( +3 )').map({ .text });
-# is_deeply @li, ['F'], 'found third last li element';
+# is-deeply @li, ['F'], 'found third last li element';
 # @li = $dom.find('li:nth-child(1n+0)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:nth-child(1n-0)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:nth-child(n+0)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:nth-child(n)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:nth-child(n+0)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:NTH-CHILD(N+0)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:Nth-Child(N+0)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:nth-child(n)').map({ .text });
-# is_deeply @li, [qw(A B C D E F G)], 'found all li elements';
+# is-deeply @li, <A B C D E F G>, 'found all li elements';
 # @li = $dom.find('li:nth-child(0n+1)').map({ .text });
-# is_deeply @li, [qw(A)], 'found first li element';
+# is-deeply @li, <A>, 'found first li element';
 # is $dom.find('li:nth-child(0n+0)').size,     0, 'no results';
 # is $dom.find('li:nth-child(0)').size,        0, 'no results';
 # is $dom.find('li:nth-child()').size,         0, 'no results';
@@ -258,74 +192,74 @@ use DOM::Tiny;
 # EOF
 # my @e;
 # $dom.find('ul :nth-child(odd)').map({ .text });
-# is_deeply @e, [qw(A C E G I)], 'found all odd elements';
+# is-deeply @e, <A C E G I>, 'found all odd elements';
 # @e = $dom.find('li:nth-of-type(odd)').map({ .text });
-# is_deeply @e, [qw(A E H)], 'found all odd li elements';
+# is-deeply @e, <A E H>, 'found all odd li elements';
 # @e = $dom.find('li:nth-last-of-type( odd )').map({ .text });
-# is_deeply @e, [qw(C F I)], 'found all odd li elements';
+# is-deeply @e, <C F I>, 'found all odd li elements';
 # @e = $dom.find('p:nth-of-type(odd)').map({ .text });
-# is_deeply @e, [qw(B G)], 'found all odd p elements';
+# is-deeply @e, <B G>, 'found all odd p elements';
 # @e = $dom.find('p:nth-last-of-type(odd)').map({ .text });
-# is_deeply @e, [qw(B G)], 'found all odd li elements';
+# is-deeply @e, <B G>, 'found all odd li elements';
 # @e = $dom.find('ul :nth-child(1)').map({ .text });
-# is_deeply @e, ['A'], 'found first child';
+# is-deeply @e, ['A'], 'found first child';
 # @e = $dom.find('ul :first-child').map({ .text });
-# is_deeply @e, ['A'], 'found first child';
+# is-deeply @e, ['A'], 'found first child';
 # @e = $dom.find('p:nth-of-type(1)').map({ .text });
-# is_deeply @e, ['B'], 'found first child';
+# is-deeply @e, ['B'], 'found first child';
 # @e = $dom.find('p:first-of-type').map({ .text });
-# is_deeply @e, ['B'], 'found first child';
+# is-deeply @e, ['B'], 'found first child';
 # @e = $dom.find('li:nth-of-type(1)').map({ .text });
-# is_deeply @e, ['A'], 'found first child';
+# is-deeply @e, ['A'], 'found first child';
 # @e = $dom.find('li:first-of-type').map({ .text });
-# is_deeply @e, ['A'], 'found first child';
+# is-deeply @e, ['A'], 'found first child';
 # @e = $dom.find('ul :nth-last-child(-n+1)').map({ .text });
-# is_deeply @e, ['I'], 'found last child';
+# is-deeply @e, ['I'], 'found last child';
 # @e = $dom.find('ul :last-child').map({ .text });
-# is_deeply @e, ['I'], 'found last child';
+# is-deeply @e, ['I'], 'found last child';
 # @e = $dom.find('p:nth-last-of-type(-n+1)').map({ .text });
-# is_deeply @e, ['G'], 'found last child';
+# is-deeply @e, ['G'], 'found last child';
 # @e = $dom.find('p:last-of-type').map({ .text });
-# is_deeply @e, ['G'], 'found last child';
+# is-deeply @e, ['G'], 'found last child';
 # @e = $dom.find('li:nth-last-of-type(-n+1)').map({ .text });
-# is_deeply @e, ['I'], 'found last child';
+# is-deeply @e, ['I'], 'found last child';
 # @e = $dom.find('li:last-of-type').map({ .text });
-# is_deeply @e, ['I'], 'found last child';
+# is-deeply @e, ['I'], 'found last child';
 # @e = $dom.find('ul :nth-child(-n+3):not(li)').map({ .text });
-# is_deeply @e, ['B'], 'found first p element';
+# is-deeply @e, ['B'], 'found first p element';
 # @e = $dom.find('ul :nth-child(-n+3):NOT(li)').map({ .text });
-# is_deeply @e, ['B'], 'found first p element';
+# is-deeply @e, ['B'], 'found first p element';
 # @e = $dom.find('ul :nth-child(-n+3):not(:first-child)')
 #   .map({ .text });
-# is_deeply @e, [qw(B C)], 'found second and third element';
+# is-deeply @e, <B C>, 'found second and third element';
 # @e = $dom.find('ul :nth-child(-n+3):not(.♥)').map({ .text });
-# is_deeply @e, [qw(A B)], 'found first and second element';
+# is-deeply @e, <A B>, 'found first and second element';
 # @e = $dom.find('ul :nth-child(-n+3):not([class$="♥"])')
 #   .map({ .text });
-# is_deeply @e, [qw(A B)], 'found first and second element';
+# is-deeply @e, <A B>, 'found first and second element';
 # @e = $dom.find('ul :nth-child(-n+3):not(li[class$="♥"])')
 #   .map({ .text });
-# is_deeply @e, [qw(A B)], 'found first and second element';
+# is-deeply @e, <A B>, 'found first and second element';
 # @e = $dom.find('ul :nth-child(-n+3):not([class$="♥"][class^="test"])')
 #   .map({ .text });
-# is_deeply @e, [qw(A B)], 'found first and second element';
+# is-deeply @e, <A B>, 'found first and second element';
 # @e = $dom.find('ul :nth-child(-n+3):not(*[class$="♥"])')
 #   .map({ .text });
-# is_deeply @e, [qw(A B)], 'found first and second element';
+# is-deeply @e, <A B>, 'found first and second element';
 # @e = $dom.find('ul :nth-child(-n+3):not(:nth-child(-n+2))')
 #   .map({ .text });
-# is_deeply @e, ['C'], 'found third element';
+# is-deeply @e, ['C'], 'found third element';
 # @e = $dom.find('ul :nth-child(-n+3):not(:nth-child(1)):not(:nth-child(2))')
 #   .map({ .text });
-# is_deeply @e, ['C'], 'found third element';
+# is-deeply @e, ['C'], 'found third element';
 # @e = $dom.find(':only-child').map({ .text });
-# is_deeply @e, ['J'], 'found only child';
+# is-deeply @e, ['J'], 'found only child';
 # @e = $dom.find('div :only-of-type').map({ .text });
-# is_deeply @e, [qw(J K)], 'found only child';
+# is-deeply @e, <J K>, 'found only child';
 # @e = $dom.find('div:only-child').map({ .text });
-# is_deeply @e, ['J'], 'found only child';
+# is-deeply @e, ['J'], 'found only child';
 # @e = $dom.find('div div:only-of-type').map({ .text });
-# is_deeply @e, [qw(J K)], 'found only child';
+# is-deeply @e, <J K>, 'found only child';
 #
 # # Sibling combinator
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
@@ -729,7 +663,7 @@ use DOM::Tiny;
 # my @following
 #   = $dom.find('tr > td:nth-child(1)').map(following => ':nth-child(even)')
 #   .flatten.map('all_text');
-# is_deeply @following, ['Beta', 'Delta', 'Beta Two', 'Delta Two'],
+# is-deeply @following, ['Beta', 'Delta', 'Beta Two', 'Delta Two'],
 #   'right results';
 #
 # # Real world list
@@ -1166,11 +1100,11 @@ use DOM::Tiny;
 # </c>
 # EOF
 # my @results = $dom.find('b').map({ .find('a').map({ .text }) }).flat;
-# is_deeply @results, [qw(bar baz yada)], 'right results';
+# is-deeply @results, <bar baz yada>, 'right results';
 # @results = $dom.find('a').map({ .text });
-# is_deeply @results, [qw(foo bar baz yada)], 'right results';
+# is-deeply @results, <foo bar baz yada>, 'right results';
 # @results = $dom.find('b').map({ .find('c a').map({ .text }) }).flat;
-# is_deeply @results, [qw(baz yada)], 'right results';
+# is-deeply @results, <baz yada>, 'right results';
 # is $dom.at('b').at('a').text, 'bar', 'right text';
 # is $dom.at('c > b > a').text, 'bar', 'right text';
 # is $dom.at('b').at('c > b > a'), Nil, 'no result';
@@ -1187,23 +1121,23 @@ use DOM::Tiny;
 # EOF
 # ok $dom.xml, 'XML mode active';
 # is $dom.at('a').{id}, 'one', 'right attribute';
-# is_deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
+# is-deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
 # is $dom.at('a').at('B').text, 'foo', 'right text';
 # is $dom.at('B').{class}, 'two', 'right attribute';
-# is_deeply [sort keys %{$dom.at('a B')}], [qw(class test)], 'right attributes';
+# is-deeply [sort keys %{$dom.at('a B')}], <class test>, 'right attributes';
 # is $dom.find('a B c').[0].text, 'bar', 'right text';
 # is $dom.find('a B c').[0]{id}, 'three', 'right attribute';
-# is_deeply [sort keys %{$dom.find('a B c').[0]}], ['id'], 'right attributes';
+# is-deeply [sort keys %{$dom.find('a B c').[0]}], ['id'], 'right attributes';
 # is $dom.find('a B c').[1].text, 'baz', 'right text';
 # is $dom.find('a B c').[1]{ID}, 'four', 'right attribute';
-# is_deeply [sort keys %{$dom.find('a B c').[1]}], ['ID'], 'right attributes';
+# is-deeply [sort keys %{$dom.find('a B c').[1]}], ['ID'], 'right attributes';
 # is $dom.find('a B c').[2], Nil, 'no result';
 # is $dom.find('a B c').size, 2, 'right number of elements';
 # @results = $dom.find('a B c').map({ .text });
-# is_deeply @results, [qw(bar baz)], 'right results';
+# is-deeply @results, <bar baz>, 'right results';
 # is $dom.find('a B c').join("\n"),
 #   qq{<c id="three">bar</c>\n<c ID="four">baz</c>}, 'right result';
-# is_deeply [keys %$dom], [], 'root has no attributes';
+# is-deeply [keys %$dom], [], 'root has no attributes';
 # is $dom.find('#nothing').join, '', 'no result';
 #
 # # Direct hash access to attributes in HTML mode
@@ -1218,23 +1152,23 @@ use DOM::Tiny;
 # EOF
 # ok !$dom.xml, 'XML mode not active';
 # is $dom.at('a').{id}, 'one', 'right attribute';
-# is_deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
+# is-deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
 # is $dom.at('a').at('b').text, 'foo', 'right text';
 # is $dom.at('b').{class}, 'two', 'right attribute';
-# is_deeply [sort keys %{$dom.at('a b')}], [qw(class test)], 'right attributes';
+# is-deeply [sort keys %{$dom.at('a b')}], <class test>, 'right attributes';
 # is $dom.find('a b c').[0].text, 'bar', 'right text';
 # is $dom.find('a b c').[0]{id}, 'three', 'right attribute';
-# is_deeply [sort keys %{$dom.find('a b c').[0]}], ['id'], 'right attributes';
+# is-deeply [sort keys %{$dom.find('a b c').[0]}], ['id'], 'right attributes';
 # is $dom.find('a b c').[1].text, 'baz', 'right text';
 # is $dom.find('a b c').[1]{id}, 'four', 'right attribute';
-# is_deeply [sort keys %{$dom.find('a b c').[1]}], ['id'], 'right attributes';
+# is-deeply [sort keys %{$dom.find('a b c').[1]}], ['id'], 'right attributes';
 # is $dom.find('a b c').[2], Nil, 'no result';
 # is $dom.find('a b c').size, 2, 'right number of elements';
 # @results = $dom.find('a b c').map({ .text });
-# is_deeply @results, [qw(bar baz)], 'right results';
+# is-deeply @results, <bar baz>, 'right results';
 # is $dom.find('a b c').join("\n"),
 #   qq{<c id="three">bar</c>\n<c id="four">baz</c>}, 'right result';
-# is_deeply [keys %$dom], [], 'root has no attributes';
+# is-deeply [keys %$dom], [], 'root has no attributes';
 # is $dom.find('#nothing').join, '', 'no result';
 #
 # # Append and prepend content
@@ -1366,15 +1300,15 @@ use DOM::Tiny;
 # is $dom.at('input').val,                     'A',   'right value';
 # is $dom.at('input:checked').val,             'B',   'right value';
 # is $dom.at('input:checked[type=radio]').val, 'C',   'right value';
-# is_deeply $dom.at('select').val, ['I', 'J'], 'right values';
+# is-deeply $dom.at('select').val, ['I', 'J'], 'right values';
 # is $dom.at('select option').val,                          'F', 'right value';
 # is $dom.at('select optgroup option:not([selected])').val, 'H', 'right value';
 # is $dom.find('select').[1].at('option').val, 'N', 'right value';
 # is $dom.find('select').[1].val,        Nil, 'no value';
-# is_deeply $dom.find('select').[2].val, Nil, 'no value';
+# is-deeply $dom.find('select').[2].val, Nil, 'no value';
 # is $dom.find('select').[2].at('option').val, 'Q', 'right value';
-# is_deeply $dom.find('select').last.val, 'D', 'right value';
-# is_deeply $dom.find('select').last.at('option').val, 'R', 'right value';
+# is-deeply $dom.find('select').last.val, 'D', 'right value';
+# is-deeply $dom.find('select').last.at('option').val, 'R', 'right value';
 # is $dom.at('textarea').val, 'M', 'right value';
 # is $dom.at('button').val,   'O', 'right value';
 # is $dom.find('form input').last.val, 'P', 'right value';
@@ -1487,7 +1421,7 @@ use DOM::Tiny;
 # is $dom.tree.[0], 'root', 'right type';
 # is $dom.tree.[1][0], 'tag', 'right type';
 # is $dom.tree.[1][1], 'foo', 'right tag';
-# is_deeply $dom.tree.[1][2], {bar => ''}, 'right attributes';
+# is-deeply $dom.tree.[1][2], {bar => ''}, 'right attributes';
 # is $dom.tree.[1][4][0], 'text',       'right type';
 # is $dom.tree.[1][4][1], "\n  test\n", 'right text';
 # is $dom.tree.[3][0], 'tag', 'right type';
@@ -1581,7 +1515,7 @@ use DOM::Tiny;
 #
 # # Slash between attributes
 # my $dom = DOM::Tiny.parse('<input /type=checkbox / value="/a/" checked/><br/>');
-# is_deeply $dom.at('input').attr,
+# is-deeply $dom.at('input').attr,
 #   {type => 'checkbox', value => '/a/', checked => Nil}, 'right attributes';
 # is "$dom", '<input checked type="checkbox" value="/a/"><br>', 'right result';
 #
