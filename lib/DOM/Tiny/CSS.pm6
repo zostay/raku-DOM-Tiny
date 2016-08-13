@@ -181,27 +181,27 @@ my class PseudoOnly is Pseudo {
 }
 
 my class PseudoEmpty is Pseudo {
-    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+    multi method ACCEPTS(::?CLASS: Tag:D $current) {
         $current.children.grep(none(Comment, PI)).elems == 0
     }
 
-    multi method ACCEPTS(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS: $) { False }
 }
 
 my class PseudoChecked is Pseudo {
-    multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
+    multi method ACCEPTS(::?CLASS: Tag:D $current) {
         $current.attr ~~ / ^ [ checked | selected ] $ /
     }
 
-    multi method ACCEPTS(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS: $) { False }
 }
 
 my class PseudoRoot is Pseudo {
-    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
+    multi method ACCEPTS(::?CLASS: DocumentNode:D $current) {
         $current.parent ~~ Root
     }
 
-    multi method ACCEPTS(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS: $) { False }
 }
 
 grammar Selector {
