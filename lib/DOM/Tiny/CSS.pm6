@@ -35,7 +35,7 @@ my class AncestorJoiner is Joiner {
         True;
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class ParentJoiner is AncestorJoiner {
@@ -66,7 +66,7 @@ my class CousinJoiner is Joiner {
         True;
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class SiblingJoiner is CousinJoiner {
@@ -85,7 +85,7 @@ my class HasAttr {
         $current.attr ~~ $!name
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class AttrIs is HasAttr {
@@ -117,7 +117,7 @@ my class AttrIs is HasAttr {
         $current.attr{ $name } ~~ $.value-regex;
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class TagMatch {
@@ -130,7 +130,7 @@ my class TagMatch {
         );
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class Pseudo { }
@@ -142,7 +142,7 @@ my class PseudoNot is Pseudo {
         $current ~~ none(|@!groups);
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class PseudoNth is Pseudo {
@@ -165,7 +165,7 @@ my class PseudoNth is Pseudo {
         }
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class PseudoOnly is Pseudo {
@@ -177,7 +177,7 @@ my class PseudoOnly is Pseudo {
         @siblings.elems == 0
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class PseudoEmpty is Pseudo {
@@ -185,7 +185,7 @@ my class PseudoEmpty is Pseudo {
         $current.children.grep(none(Comment, PI)).elems == 0
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class PseudoChecked is Pseudo {
@@ -193,7 +193,7 @@ my class PseudoChecked is Pseudo {
         $current.attr ~~ / ^ [ checked | selected ] $ /
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class PseudoRoot is Pseudo {
@@ -201,7 +201,7 @@ my class PseudoRoot is Pseudo {
         $current.parent ~~ Root
     }
 
-    multi method ACCEPT(::?CLASS:D: $) { False }
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 grammar Selector {
