@@ -156,11 +156,23 @@ my class PseudoNth is Pseudo {
         @siblings .= grep({ .tag eq $current.tag }) if $!of-type;
         my $pos = @siblings.first({ $_ === $current }, :k);
         $pos = @siblings.end - $pos if $!end;
+        $pos++;
+        #say "offset=$!offset";
+        #say "coeff=$!coeff";
+        #say "pos=$pos";
 
-        if $!coeff != 0 {
-            ($pos - $!offset) %% $!coeff
+        if $!coeff > 0 {
+            #say "accept={?(($pos - $!offset) %% $!coeff)} $current";
+            ?(($pos - $!offset) %% $!coeff)
+        }
+        elsif $!coeff < 0 {
+            #say "accept={$pos == $!offset} $current";
+            #say "access={?(($pos - $!offset) %% $!coeff) && $pos <= $!offset} $current";
+            ?(($pos - $!offset) %% $!coeff)
+                && $pos <= $!offset #>
         }
         else {
+            #say "accept={$pos == $!offset} $current";
             $pos == $!offset
         }
     }
@@ -229,31 +241,40 @@ grammar Selector {
     token selector:sym<any> { '*' }
 
     proto rule pseudo-class { * }
-    rule pseudo-class:sym<not>   { not '(' <TOP> ')' }
+    rule pseudo-class:sym<not>   { :i not '(' <TOP> ')' }
     rule pseudo-class:sym<nth>   { <nth-x> '(' <equation> ')' }
     rule pseudo-class:sym<first> { <first-x> }
     rule pseudo-class:sym<last>  { <last-x> }
     rule pseudo-class:sym<only>  { <only-x> }
-    rule pseudo-class:sym<other> { empty | checked | root }
+    rule pseudo-class:sym<other> {
+        | :i empty
+        | :i checked
+        | :i root
+    }
 
     token nth-x {
-        | 'nth-child'
-        | 'nth-last-child'
-        | 'nth-of-type'
-        | 'nth-last-of-type'
+        | :i 'nth-child'
+        | :i 'nth-last-child'
+        | :i 'nth-of-type'
+        | :i 'nth-last-of-type'
     }
-    token first-x { 'first-child' | 'first-of-type' }
-    token last-x  { 'last-child' | 'last-of-type' }
-    token only-x  { 'only-child' | 'only-of-type' }
+    token first-x { :i 'first-child' | :i 'first-of-type' }
+    token last-x  { :i 'last-child'  | :i 'last-of-type' }
+    token only-x  { :i 'only-child'  | :i 'only-of-type' }
 
     proto rule equation { * }
-    rule equation:sym<even>     { even }
-    rule equation:sym<odd>      { odd }
+    rule equation:sym<even>     { :i even }
+    rule equation:sym<odd>      { :i odd }
     rule equation:sym<number>   { $<number> = [ <[+-]>? \d+ ] }
-    rule equation:sym<function> {
-        $<coeff>  = [ <[+-]>? [ \d+ ]? ]? n
-        $<offset> = [ <[+-]>? \d+ ]?
+    token equation:sym<function> {
+        | <.ws> <coeff> :i n <.ws> $<offset> = <.full-offset> <.ws>
+        | <.ws> <coeff> :i n <.ws>
+        | <.ws> $<offset> = <.partial-offset> <.ws>
     }
+
+    token coeff { <[+-]>? [ \d+ ]? }
+    token full-offset { <[+-]> <.ws> \d+ }
+    token partial-offset { <[+-]>? <.ws> \d+ }
 
     token attr-key { [ <.escape> | <[\w -]> ]+ }
     token attr-value { [
@@ -367,8 +388,8 @@ class Compiler {
         make PseudoNot.new(groups => $<TOP>.made)
     }
     method pseudo-class:sym<nth>($/) {
-        my $nth              = ~<$nth-x>;
-        my $end              = $nth ~~ / '-last-' /;
+        my $nth              = ~$<nth-x>;
+        my $end              = $nth.index('-last-').defined;
         my $of-type          = $nth.ends-with('-of-type');
         my ($coeff, $offset) = |$<equation>.made;
 
@@ -378,13 +399,13 @@ class Compiler {
         my $first   = ~$<first-x>;
         my $of-type = $first.ends-with('-of-type');
 
-        make PseudoNth.new(:!end, :$of-type, :coeff(0), :offset(0));
+        make PseudoNth.new(:!end, :$of-type, :coeff(0), :offset(1));
     }
     method pseudo-class:sym<last>($/) {
         my $last    = ~$<last-x>;
         my $of-type = $last.ends-with('-of-type');
 
-        make PseudoNth.new(:end, :$of-type, :coeff(0), :offset(0));
+        make PseudoNth.new(:end, :$of-type, :coeff(0), :offset(1));
     }
     method pseudo-class:sym<only>($/) {
         make PseudoOnly.new(
@@ -393,21 +414,22 @@ class Compiler {
     }
     method pseudo-class:sym<other>($/) {
         given ~$/ {
-            when 'empty'   { make PseudoEmpty }
-            when 'checked' { make PseudoChecked }
-            when 'root'    { make PseudoRoot }
+            when 'empty'   { make PseudoEmpty.new }
+            when 'checked' { make PseudoChecked.new }
+            when 'root'    { make PseudoRoot.new }
         }
     }
 
-    method equation:sym<even>($/)     { make [2, 1] }
-    method equation:sym<odd>($/)      { make [2, 0] }
-    method equation:sym<number>($/)   { make [0, (~$<number>).Int - 1] }
+    method equation:sym<even>($/)     { make [2, 2] }
+    method equation:sym<odd>($/)      { make [2, 1] }
+    method equation:sym<number>($/)   { make [0, (~$<number>).Int] }
     method equation:sym<function>($/) {
         my $coeff = do given ~$<coeff> {
             when '-' { -1 }
-            default  { .Int }
+            when ''  { 1 }
+            default  { .subst(/\s+/, '').Int }
         }
-        my $offset = (~$<offset>).Int // 0;
+        my $offset = ($<offset>//'').Str.subst(/\s+/, '').Int // 0;
         make [$coeff, $offset]
     }
 
@@ -432,6 +454,7 @@ method select(DOM::Tiny::CSS:D: Str:D $css) {
     return () unless $!tree ~~ HasChildren;
 
     my $matcher = _compile($css);
+    #dd $matcher;
     my @search = $!tree.child-nodes(:tags-only);
     gather while @search.shift -> $current {
         my $*TREE-CONTEXT = $!tree;
@@ -447,7 +470,7 @@ method select-one(DOM::Tiny::CSS:D: Str:D $css) returns DocumentNode:D {
 my sub _compile($css) {
     DOM::Tiny::CSS::Selector.parse($css,
         actions => DOM::Tiny::CSS::Compiler,
-    ).made;
+    ).made // fail('syntax error in selector');
 }
 
 my multi _unescape(Str:D $value is copy) {
