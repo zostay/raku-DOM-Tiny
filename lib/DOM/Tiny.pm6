@@ -57,7 +57,8 @@ method ancestors(DOM::Tiny:D: Str $selector?) {
 
 method append(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
-        $!tree.parent.children.append:
+        my $i = $!tree.parent.children.first(* === $!tree, :k);
+        $!tree.parent.children.splice: $i+1, 0,
             _link($!tree.parent, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes)
     }
 
@@ -212,7 +213,8 @@ method preceding-nodes(DOM::Tiny:D:) {
 
 method prepend(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
-        $!tree.parent.children.prepend:
+        my $i = $!tree.parent.children.first(* === $!tree, :k);
+        $!tree.parent.children.splice: $i, 0,
             _link($!tree.parent, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes);
     }
 
@@ -222,6 +224,7 @@ method prepend-content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) {
     if $!tree ~~ HasChildren {
         $!tree.children.prepend:
             _link($!tree, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes);
+        self;
     }
     elsif $!tree ~~ TextNode {
         my $parent = $!tree.parent;

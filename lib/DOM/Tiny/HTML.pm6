@@ -219,6 +219,18 @@ role HasChildren is export {
 
         my $which-children = $recurse ?? TextNode | HasChildren !! TextNode;
 
+        my $i = 0;
+        MERGE: while @!children[$i + 1] -> $next {
+            if @!children[$i] ~~ Text && $next ~~ Text {
+                splice @!children, $i, 2, Text.new(
+                    text => @!children[$i].text ~ $next.text,
+                );
+                next MERGE;
+            }
+
+            $i++;
+        }
+
         my $previous-chunk = '';
         [~] gather for self.child-nodes.grep($which-children)\
                                        .map({ .text(:$trim, :$recurse) })\
