@@ -7,64 +7,60 @@ my class Joiner {
     has @.combine;
 
     submethod BUILD(:@combine) {
+        PRE { @combine.elems !%% 2 }
         @!combine = @combine.reverse;
     }
-}
 
-my class AncestorJoiner is Joiner {
-    method no-gaps { False }
+    # TODO This is a slightly horrible recursive solution. A loop may be
+    # preferable.
 
-    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current is copy) {
-        return False unless $current ~~ @.combine[0];
-
-        my @ancestors = $current.ancestor-nodes(:context);
-        COMBINATION: for @.combine[1 .. *] -> $selector {
-            for @ancestors -> $current {
-                if $current ~~ $selector {
-                    shift @ancestors;
-                    next COMBINATION;
-                }
-                elsif $.no-gaps {
-                    return False;
-                }
-            }
-
-            return False;
-        }
-
-        True;
+    my sub next-combination(@next, $current) {
+        return True unless @next;
+        try-combination(@next[0], @next[1], @next[2..*], $current);
     }
 
-    multi method ACCEPTS(::?CLASS:D: $) { False }
-}
+    my multi try-combination('', $test, @next, $current) {
+        my @possibles = $current.ancestor-nodes(:context).grep($test);
 
-my class ParentJoiner is AncestorJoiner {
-    method no-gaps { True }
-}
+        return False unless @possibles;
 
-my class CousinJoiner is Joiner {
-    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
-        my @cousins = $current.split-siblings(:tags-only)<before>.reverse;
-        unshift @cousins, $current;
-
-        return False if @cousins.elems < @.combine.elems;
-
-        for @cousins.combinations(@.combine.elems) -> $combination {
-            return $combination ~~ @.combine;
+        for @possibles -> $ancestor {
+            return True if next-combination(@next, $ancestor);
         }
 
         False;
     }
 
-    multi method ACCEPTS(::?CLASS:D: $) { False }
-}
+    my multi try-combination('>', $test, @next, $current) {
+        return False unless $current.parent ~~ $test;
+        next-combination(@next, $current.parent);
+    }
 
-my class SiblingJoiner is Joiner {
-    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
-        my @siblings = $current.split-siblings(:tags-only)<before>.reverse;
-        unshift @siblings, $current;
-        @siblings = @siblings[^@.combine.elems];
-        @siblings ~~ @.combine;
+    my multi try-combination('+', $test, @next, $current) {
+        my $siblings := $current.split-siblings(:tags-only)<before>;
+        return False unless $siblings.elems > 0;
+        my $previous-sibling = $siblings[*-1];
+        return False unless $previous-sibling ~~ $test;
+        next-combination(@next, $previous-sibling);
+    }
+
+    my multi try-combination('~', $test, @next, $current) {
+        my @previous-siblings = $current.split-siblings(:tags-only)<before>.reverse;
+        my @possibles = @previous-siblings.grep($test);
+
+        return False unless @possibles;
+
+        for @possibles -> $sibling {
+            return True if next-combination(@next, $sibling);
+        }
+
+        False;
+    }
+
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current is copy) {
+        return False unless $current ~~ @!combine[0];
+        return True if @!combine.elems == 1;
+        next-combination(@!combine[1..*], $current);
     }
 
     multi method ACCEPTS(::?CLASS:D: $) { False }
@@ -214,12 +210,18 @@ my class PseudoRoot is Pseudo {
 }
 
 grammar Selector {
-    rule TOP { <ancestor-child> +% ',' }
+    rule TOP { <joiner> +% ',' }
 
-    rule ancestor-child { <ancestors=.parent-child> + }
-    rule parent-child   { <family=.cousins> +% '>' }
-    rule cousins        { <clans=.brother-sister> +% '~' }
-    rule brother-sister { <siblings=.node-match> +% '+' }
+    token joiner {
+        <.ws> <node-match>
+            [ <join-op> <node-match> ]* <.ws>
+    }
+    token join-op {
+        | \s+ <!before '>' | '~' | '+'>
+        | <.ws> '>' <.ws>
+        | <.ws> '~' <.ws>
+        | <.ws> '+' <.ws>
+    }
 
     token node-match { <selector>+ }
 
@@ -298,48 +300,21 @@ grammar Selector {
 
 class Compiler {
     method TOP($/)   {
-        if $<ancestor-child>.elems > 1 {
-            make any(|$<ancestor-child>».made);
+        if $<joiner>.elems > 1 {
+            make any(|$<joiner>».made);
         }
         else {
-            make $<ancestor-child>[0].made;
+            make $<joiner>[0].made;
         }
     }
 
-    method ancestor-child($/) {
-        if $<ancestors>.elems > 1 {
-            make AncestorJoiner.new(combine => $<ancestors>».made);
-        }
-        else {
-            make $<ancestors>[0].made;
-        }
-    }
-
-    method parent-child($/)   {
-        if $<family>.elems > 1 {
-            make ParentJoiner.new(combine => $<family>».made);
-        }
-        else {
-            make $<family>[0].made;
-        }
-    }
-
-    method cousins($/)        {
-        if $<clans>.elems > 1 {
-            make CousinJoiner.new(combine => $<clans>».made);
-        }
-        else {
-            make $<clans>[0].made;
-        }
-    }
-
-    method brother-sister($/) {
-        if $<siblings>.elems > 1 {
-            make SiblingJoiner.new(combine => $<siblings>».made);
-        }
-        else {
-            make $<siblings>[0].made;
-        }
+    method joiner($/) {
+        make Joiner.new(
+            combine => flat roundrobin(
+                $<node-match>».made,
+                $<join-op>».Str».trim,
+            ),
+        );
     }
 
     method node-match($/) {
