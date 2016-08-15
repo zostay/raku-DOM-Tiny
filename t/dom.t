@@ -4,336 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Optional "head" and "body" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head>
-#     <title>foo</title>
-#   <body>bar
-# EOF
-# is $dom.at('html > head > title').text, 'foo', 'right text';
-# is $dom.at('html > body').text,         'bar', 'right text';
-#
-# # Optional "li" tag
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <ul>
-#   <li>
-#     <ol>
-#       <li>F
-#       <li>G
-#     </ol>
-#   <li>A</li>
-#   <LI>B
-#   <li>C</li>
-#   <li>D
-#   <li>E
-# </ul>
-# EOF
-# is $dom.find('ul > li > ol > li').[0].text, 'F', 'right text';
-# is $dom.find('ul > li > ol > li').[1].text, 'G', 'right text';
-# is $dom.find('ul > li').[1].text,           'A', 'right text';
-# is $dom.find('ul > li').[2].text,           'B', 'right text';
-# is $dom.find('ul > li').[3].text,           'C', 'right text';
-# is $dom.find('ul > li').[4].text,           'D', 'right text';
-# is $dom.find('ul > li').[5].text,           'E', 'right text';
-#
-# # Optional "p" tag
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <div>
-#   <p>A</p>
-#   <P>B
-#   <p>C</p>
-#   <p>D<div>X</div>
-#   <p>E<img src="foo.png">
-#   <p>F<br>G
-#   <p>H
-# </div>
-# EOF
-# is $dom.find('div > p').[0].text, 'A',   'right text';
-# is $dom.find('div > p').[1].text, 'B',   'right text';
-# is $dom.find('div > p').[2].text, 'C',   'right text';
-# is $dom.find('div > p').[3].text, 'D',   'right text';
-# is $dom.find('div > p').[4].text, 'E',   'right text';
-# is $dom.find('div > p').[5].text, 'F G', 'right text';
-# is $dom.find('div > p').[6].text, 'H',   'right text';
-# is $dom.find('div > p > p').[0], Nil, 'no results';
-# is $dom.at('div > p > img').attr<src>, 'foo.png', 'right attribute';
-# is $dom.at('div > div').text, 'X', 'right text';
-#
-# # Optional "dt" and "dd" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <dl>
-#   <dt>A</dt>
-#   <DD>B
-#   <dt>C</dt>
-#   <dd>D
-#   <dt>E
-#   <dd>F
-# </dl>
-# EOF
-# is $dom.find('dl > dt').[0].text, 'A', 'right text';
-# is $dom.find('dl > dd').[0].text, 'B', 'right text';
-# is $dom.find('dl > dt').[1].text, 'C', 'right text';
-# is $dom.find('dl > dd').[1].text, 'D', 'right text';
-# is $dom.find('dl > dt').[2].text, 'E', 'right text';
-# is $dom.find('dl > dd').[2].text, 'F', 'right text';
-#
-# # Optional "rp" and "rt" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <ruby>
-#   <rp>A</rp>
-#   <RT>B
-#   <rp>C</rp>
-#   <rt>D
-#   <rp>E
-#   <rt>F
-# </ruby>
-# EOF
-# is $dom.find('ruby > rp').[0].text, 'A', 'right text';
-# is $dom.find('ruby > rt').[0].text, 'B', 'right text';
-# is $dom.find('ruby > rp').[1].text, 'C', 'right text';
-# is $dom.find('ruby > rt').[1].text, 'D', 'right text';
-# is $dom.find('ruby > rp').[2].text, 'E', 'right text';
-# is $dom.find('ruby > rt').[2].text, 'F', 'right text';
-#
-# # Optional "optgroup" and "option" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <div>
-#   <optgroup>A
-#     <option id="foo">B
-#     <option>C</option>
-#     <option>D
-#   <OPTGROUP>E
-#     <option>F
-#   <optgroup>G
-#     <option>H
-# </div>
-# EOF
-# is $dom.find('div > optgroup').[0].text,          'A', 'right text';
-# is $dom.find('div > optgroup > #foo').[0].text,   'B', 'right text';
-# is $dom.find('div > optgroup > option').[1].text, 'C', 'right text';
-# is $dom.find('div > optgroup > option').[2].text, 'D', 'right text';
-# is $dom.find('div > optgroup').[1].text,          'E', 'right text';
-# is $dom.find('div > optgroup > option').[3].text, 'F', 'right text';
-# is $dom.find('div > optgroup').[2].text,          'G', 'right text';
-# is $dom.find('div > optgroup > option').[4].text, 'H', 'right text';
-#
-# # Optional "colgroup" tag
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <table>
-#   <col id=morefail>
-#   <col id=fail>
-#   <colgroup>
-#     <col id=foo>
-#     <col class=foo>
-#   <colgroup>
-#     <col id=bar>
-# </table>
-# EOF
-# is $dom.find('table > col').[0].attr<id>, 'morefail', 'right attribute';
-# is $dom.find('table > col').[1].attr<id>, 'fail',     'right attribute';
-# is $dom.find('table > colgroup > col').[0].attr<id>, 'foo',
-#   'right attribute';
-# is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
-#   'right attribute';
-# is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
-#   'right attribute';
-#
-# # Optional "thead", "tbody", "tfoot", "tr", "th" and "td" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <table>
-#   <thead>
-#     <tr>
-#       <th>A</th>
-#       <th>D
-#   <tfoot>
-#     <tr>
-#       <td>C
-#   <tbody>
-#     <tr>
-#       <td>B
-# </table>
-# EOF
-# is $dom.at('table > thead > tr > th').text, 'A', 'right text';
-# is $dom.find('table > thead > tr > th').[1].text, 'D', 'right text';
-# is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
-# is $dom.at('table > tfoot > tr > td').text, 'C', 'right text';
-#
-# # Optional "colgroup", "thead", "tbody", "tr", "th" and "td" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <table>
-#   <col id=morefail>
-#   <col id=fail>
-#   <colgroup>
-#     <col id=foo />
-#     <col class=foo>
-#   <colgroup>
-#     <col id=bar>
-#   </colgroup>
-#   <thead>
-#     <tr>
-#       <th>A</th>
-#       <th>D
-#   <tbody>
-#     <tr>
-#       <td>B
-#   <tbody>
-#     <tr>
-#       <td>E
-# </table>
-# EOF
-# is $dom.find('table > col').[0].attr<id>, 'morefail', 'right attribute';
-# is $dom.find('table > col').[1].attr<id>, 'fail',     'right attribute';
-# is $dom.find('table > colgroup > col').[0].attr<id>, 'foo',
-#   'right attribute';
-# is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
-#   'right attribute';
-# is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
-#   'right attribute';
-# is $dom.at('table > thead > tr > th').text, 'A', 'right text';
-# is $dom.find('table > thead > tr > th').[1].text, 'D', 'right text';
-# is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
-# is $dom.find('table > tbody > tr > td').map('text').join("\n"), "B\nE",
-#   'right text';
-#
-# # Optional "colgroup", "tbody", "tr", "th" and "td" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <table>
-#   <colgroup>
-#     <col id=foo />
-#     <col class=foo>
-#   <colgroup>
-#     <col id=bar>
-#   </colgroup>
-#   <tbody>
-#     <tr>
-#       <td>B
-# </table>
-# EOF
-# is $dom.find('table > colgroup > col').[0].attr<id>, 'foo',
-#   'right attribute';
-# is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
-#   'right attribute';
-# is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
-#   'right attribute';
-# is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
-#
-# # Optional "tr" and "td" tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <table>
-#     <tr>
-#       <td>A
-#       <td>B</td>
-#     <tr>
-#       <td>C
-#     </tr>
-#     <tr>
-#       <td>D
-# </table>
-# EOF
-# is $dom.find('table > tr > td').[0].text, 'A', 'right text';
-# is $dom.find('table > tr > td').[1].text, 'B', 'right text';
-# is $dom.find('table > tr > td').[2].text, 'C', 'right text';
-# is $dom.find('table > tr > td').[3].text, 'D', 'right text';
-#
-# # Real world table
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head>
-#     <title>Real World!</title>
-#   <body>
-#     <p>Just a test
-#     <table class=RealWorld>
-#       <thead>
-#         <tr>
-#           <th class=one>One
-#           <th class=two>Two
-#           <th class=three>Three
-#           <th class=four>Four
-#       <tbody>
-#         <tr>
-#           <td class=alpha>Alpha
-#           <td class=beta>Beta
-#           <td class=gamma><a href="#gamma">Gamma</a>
-#           <td class=delta>Delta
-#         <tr>
-#           <td class=alpha>Alpha Two
-#           <td class=beta>Beta Two
-#           <td class=gamma><a href="#gamma-two">Gamma Two</a>
-#           <td class=delta>Delta Two
-#     </table>
-# EOF
-# is $dom.find('html > head > title').[0].text, 'Real World!', 'right text';
-# is $dom.find('html > body > p').[0].text,     'Just a test', 'right text';
-# is $dom.find('p').[0].text,                   'Just a test', 'right text';
-# is $dom.find('thead > tr > .three').[0].text, 'Three',       'right text';
-# is $dom.find('thead > tr > .four').[0].text,  'Four',        'right text';
-# is $dom.find('tbody > tr > .beta').[0].text,  'Beta',        'right text';
-# is $dom.find('tbody > tr > .gamma').[0].text, '',            'no text';
-# is $dom.find('tbody > tr > .gamma > a').[0].text, 'Gamma',     'right text';
-# is $dom.find('tbody > tr > .alpha').[1].text,     'Alpha Two', 'right text';
-# is $dom.find('tbody > tr > .gamma > a').[1].text, 'Gamma Two', 'right text';
-# my @following
-#   = $dom.find('tr > td:nth-child(1)').map(following => ':nth-child(even)')
-#   .flatten.map('all_text');
-# is-deeply @following, ['Beta', 'Delta', 'Beta Two', 'Delta Two'],
-#   'right results';
-#
-# # Real world list
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head>
-#     <title>Real World!</title>
-#   <body>
-#     <ul>
-#       <li>
-#         Test
-#         <br>
-#         123
-#         <p>
-#
-#       <li>
-#         Test
-#         <br>
-#         321
-#         <p>
-#       <li>
-#         Test
-#         3
-#         2
-#         1
-#         <p>
-#     </ul>
-# EOF
-# is $dom.find('html > head > title').[0].text,    'Real World!', 'right text';
-# is $dom.find('body > ul > li').[0].text,         'Test 123',    'right text';
-# is $dom.find('body > ul > li > p').[0].text,     '',            'no text';
-# is $dom.find('body > ul > li').[1].text,         'Test 321',    'right text';
-# is $dom.find('body > ul > li > p').[1].text,     '',            'no text';
-# is $dom.find('body > ul > li').[1].all_text,     'Test 321',    'right text';
-# is $dom.find('body > ul > li > p').[1].all_text, '',            'no text';
-# is $dom.find('body > ul > li').[2].text,         'Test 3 2 1',  'right text';
-# is $dom.find('body > ul > li > p').[2].text,     '',            'no text';
-# is $dom.find('body > ul > li').[2].all_text,     'Test 3 2 1',  'right text';
-# is $dom.find('body > ul > li > p').[2].all_text, '',            'no text';
-#
-# # Advanced whitespace trimming (punctuation)
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head>
-#     <title>Real World!</title>
-#   <body>
-#     <div>foo <strong>bar</strong>.</div>
-#     <div>foo<strong>, bar</strong>baz<strong>; yada</strong>.</div>
-#     <div>foo<strong>: bar</strong>baz<strong>? yada</strong>!</div>
-# EOF
-# is $dom.find('html > head > title').[0].text, 'Real World!', 'right text';
-# is $dom.find('body > div').[0].all_text,      'foo bar.',    'right text';
-# is $dom.find('body > div').[1].all_text, 'foo, bar baz; yada.', 'right text';
-# is $dom.find('body > div').[1].text,     'foo baz.',            'right text';
-# is $dom.find('body > div').[2].all_text, 'foo: bar baz? yada!', 'right text';
-# is $dom.find('body > div').[2].text,     'foo baz!',            'right text';
-#
 # # Real world JavaScript and CSS
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
 # <html>
@@ -349,11 +19,11 @@ use DOM::Tiny;
 # EOF
 # is $dom.find('html > body').[0].text, 'Foo!', 'right text';
 # is $dom.find('html > head > style').[0].text,
-#   "#style { foo: style('<test>'); }", 'right text';
+#   "#style \{ foo: style('<test>'); }", 'right text';
 # is $dom.find('html > head > script').[0].text,
-#   "\n      if (a < b) {\n        alert('<123>');\n      }\n    ", 'right text';
+#   "\n      if (a < b) \{\n        alert('<123>');\n      }\n    ", 'right text';
 # is $dom.find('html > head > script').[1].text,
-#   "if (b > c) { alert('&<ohoh>') }", 'right text';
+#   "if (b > c) \{ alert('&<ohoh>') }", 'right text';
 #
 # # More real world JavaScript
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
@@ -788,12 +458,12 @@ use DOM::Tiny;
 # my $dom = DOM::Tiny.parse('<a><b>Test<c /></b></a>');
 # $dom.at('b').append_content('<d />');
 # is $dom.children.[0].tag, 'a', 'right tag';
-# is $dom.all_text, 'Test', 'right text';
+# is $dom.all-text, 'Test', 'right text';
 # is $dom.at('c').parent.tag, 'b', 'right tag';
 # is $dom.at('d').parent.tag, 'b', 'right tag';
 # $dom.at('b').prepend_content('<e>DOM</e>');
 # is $dom.at('e').parent.tag, 'b', 'right tag';
-# is $dom.all_text, 'DOM Test', 'right text';
+# is $dom.all-text, 'DOM Test', 'right text';
 #
 # # Wrap elements
 # my $dom = DOM::Tiny.parse('<a>Test</a>');
@@ -859,23 +529,23 @@ use DOM::Tiny;
 # EOF
 # is $dom.text, '', 'no text';
 # is $dom.text(0), "\n", 'right text';
-# is $dom.all_text, "looks like\n  it\n    really\n  works", 'right text';
-# is $dom.all_text(0), "\n  looks\n  like\n  it\n    really\n  \n  works\n\n",
+# is $dom.all-text, "looks like\n  it\n    really\n  works", 'right text';
+# is $dom.all-text(0), "\n  looks\n  like\n  it\n    really\n  \n  works\n\n",
 #   'right text';
 # is $dom.at('div').text, 'looks works', 'right text';
 # is $dom.at('div').text(0), "\n  looks\n  \n  works\n", 'right text';
-# is $dom.at('div').all_text, "looks like\n  it\n    really\n  works",
+# is $dom.at('div').all-text, "looks like\n  it\n    really\n  works",
 #   'right text';
-# is $dom.at('div').all_text(0),
+# is $dom.at('div').all-text(0),
 #   "\n  looks\n  like\n  it\n    really\n  \n  works\n", 'right text';
 # is $dom.at('div pre').text, "\n  ", 'right text';
 # is $dom.at('div pre').text(0), "\n  ", 'right text';
-# is $dom.at('div pre').all_text, "like\n  it\n    really\n  ", 'right text';
-# is $dom.at('div pre').all_text(0), "like\n  it\n    really\n  ", 'right text';
+# is $dom.at('div pre').all-text, "like\n  it\n    really\n  ", 'right text';
+# is $dom.at('div pre').all-text(0), "like\n  it\n    really\n  ", 'right text';
 # is $dom.at('div pre code').text, "like\n  it\n    really", 'right text';
 # is $dom.at('div pre code').text(0), "like\n  it\n    really", 'right text';
-# is $dom.at('div pre code').all_text, "like\n  it\n    really", 'right text';
-# is $dom.at('div pre code').all_text(0), "like\n  it\n    really",
+# is $dom.at('div pre code').all-text, "like\n  it\n    really", 'right text';
+# is $dom.at('div pre code').all-text(0), "like\n  it\n    really",
 #   'right text';
 #
 # # Form values
@@ -1207,7 +877,7 @@ use DOM::Tiny;
 # # Huge number of nested tags
 # my $huge = ('<a>' x 100) . 'works' . ('</a>' x 100);
 # my $dom = DOM::Tiny.parse($huge);
-# is $dom.all_text, 'works', 'right text';
+# is $dom.all-text, 'works', 'right text';
 # is "$dom", $huge, 'right result';
 #
 # # TO_JSON

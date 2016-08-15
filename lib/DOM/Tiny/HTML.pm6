@@ -81,12 +81,12 @@ my %END = body => 'head', optgroup => 'optgroup', option => 'option';
 my %TABLE = set <colgroup tbody td tfoot th thead tr>;
 
 # HTML elements with optional end tags and scoping rules
-my %CLOSE
-  = li => [set <li>, set <ul ol>], tr => [set <tr>, set <table>];
-%CLOSE{$_} = [%TABLE, set <table>] for <colgroup tbody tfoot thead>;
-%CLOSE{$_} = [set <dd dt>, set <dl>] for <dd dt>;
-%CLOSE{$_} = [set <rp rt>, set <ruby>] for <rp rt>;
-%CLOSE{$_} = [set <th td>, set <table>] for <td th>;
+my %CLOSE = li => ((set <li>), (set <ul ol>)),
+            tr => ((set <tr>), (set <table>));
+%CLOSE{$_} = %TABLE, (set <table>) for <colgroup tbody tfoot thead>;
+%CLOSE{$_} = (set <dd dt>), (set <dl>) for <dd dt>;
+%CLOSE{$_} = (set <rp rt>), (set <ruby>) for <rp rt>;
+%CLOSE{$_} = (set <th td>), (set <table>) for <td th>;
 
 # HTML elements without end tags
 my %EMPTY = set <
@@ -312,6 +312,7 @@ class PI is export is DocumentNode {
 }
 
 class Raw is export is DocumentNode does TextNode {
+    method trimmable() { False }
     method render(:$xml) { $!text }
 }
 
@@ -387,17 +388,17 @@ class TreeMaker {
     my sub _start($start, %attr, $xml, $current is rw) {
 
         # Autoclose optional HTML elements
-        if !$xml && $current ~~ Root {
+        if !$xml && $current !~~ Root {
             if %END{$start} -> $end {
                 _end($end, False, $current);
             }
             elsif %CLOSE{$start} -> $close {
-                my (%allowed, %scope) = |$close;
+                my ($allowed, $scope) = |$close;
 
                 # Close allowed parent elements in scope
                 my $parent = $current;
-                while $parent !~~ Root && %scope ∌ $parent.tag {
-                    _end($parent.tag, False, $current) if %scope ∋ $parent.tag;
+                while $parent !~~ Root && $scope ∌ $parent.tag {
+                    _end($parent.tag, False, $current) if $allowed ∋ $parent.tag;
                     $parent = $parent.parent;
                 }
             }
