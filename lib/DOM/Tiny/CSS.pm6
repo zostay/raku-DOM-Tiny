@@ -43,34 +43,31 @@ my class ParentJoiner is AncestorJoiner {
 }
 
 my class CousinJoiner is Joiner {
-    method no-gaps { False }
-
     multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
-        return False unless $current ~~ @.combine[0];
+        my @cousins = $current.split-siblings(:tags-only)<before>.reverse;
+        unshift @cousins, $current;
 
-        my @cousins = $current.split-siblings<before>.reverse;
+        return False if @cousins.elems < @.combine.elems;
 
-        COMBINATION: for @.combine[1 .. *] -> $selector {
-            for @cousins -> $current {
-                if $current ~~ $selector {
-                    next COMBINATION;
-                }
-                elsif $.no-gaps {
-                    return False;
-                }
-            }
-
-            return False;
+        for @cousins.combinations(@.combine.elems) -> $combination {
+            return $combination ~~ @.combine;
         }
 
-        True;
+        False;
     }
 
     multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
-my class SiblingJoiner is CousinJoiner {
-    method no-gaps { True }
+my class SiblingJoiner is Joiner {
+    multi method ACCEPTS(::?CLASS:D: DocumentNode:D $current) {
+        my @siblings = $current.split-siblings(:tags-only)<before>.reverse;
+        unshift @siblings, $current;
+        @siblings = @siblings[^@.combine.elems];
+        @siblings ~~ @.combine;
+    }
+
+    multi method ACCEPTS(::?CLASS:D: $) { False }
 }
 
 my class HasAttr {
