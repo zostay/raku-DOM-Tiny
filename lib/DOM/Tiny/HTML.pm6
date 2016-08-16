@@ -290,6 +290,7 @@ role TextNode is export {
 }
 
 class CDATA is export is DocumentNode does TextNode {
+    method trimmable(CDATA:D:) { False }
     method render(:$xml) { '<![CDATA[' ~ $.text ~ ']]>' }
 }
 
