@@ -4,12 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Slash between attributes
-# my $dom = DOM::Tiny.parse('<input /type=checkbox / value="/a/" checked/><br/>');
-# is-deeply $dom.at('input').attr,
-#   {type => 'checkbox', value => '/a/', checked => Nil}, 'right attributes';
-# is "$dom", '<input checked type="checkbox" value="/a/"><br>', 'right result';
-#
 # # Dot and hash in class and id attributes
 # my $dom = DOM::Tiny.parse('<p class="a#b.c">A</p><p id="a#b.c">B</p>');
 # is $dom.at('p.a\#b\.c').text,       'A', 'right text';

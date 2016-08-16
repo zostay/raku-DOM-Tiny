@@ -36,9 +36,9 @@ grammar XMLTokenizer {
 
     rule attr {
         || <attr-key> [ '=' <attr-value> ]?
-        || <attr-broken>
+        || <attr-broken> [ '=' <attr-value> ]?
     }
-    token attr-key { <-[ < > = \s \/ ]>+ }
+    token attr-key { <-[ < > = \s / ]>+ }
     token attr-value {
         | [ '"' $<raw-value> = [ .*? ] '"'  ]
         | [ "'" $<raw-value> = [ .*? ] "'" ]
@@ -46,7 +46,7 @@ grammar XMLTokenizer {
     }
     token attr-broken {
         [
-        | <-[ \s < > / ]>
+        | <-[ \s < > = / ]>
         | '/' <!before <.ws> '>' >
         ]+
     }
@@ -544,7 +544,7 @@ class TreeMaker {
         make {
             type  => Raw,
             tag   => $.xml ?? ~$<start> !! (~$<start>).lc,
-            attr  => Hash.new($<attr>».made),
+            attr  => Hash.new($<attr>».made.grep(*.defined)),
             raw   => ~$<raw-text>,
         };
     }
@@ -554,7 +554,7 @@ class TreeMaker {
             type  => Tag,
             end   => ?$<end-mark>,
             tag   => $.xml ?? ~$<tag-name> !! (~$<tag-name>).lc,
-            attr  => Hash.new($<attr>».made),
+            attr  => Hash.new($<attr>».made.grep(*.defined)),
             empty => ?$<empty-tag-mark>,
         }
     }
@@ -593,7 +593,15 @@ class TreeMaker {
 
     method attr($/) {
         if $<attr-broken> {
-            make ~$<attr-broken> => Nil;
+            if not $<attr-broken>.made {
+                make ();
+            }
+            elsif $<attr-value> {
+                make $<attr-broken>.made => $<attr-value>.made;
+            }
+            else {
+                make $<attr-broken>.made => Nil;
+            }
         }
         elsif $<attr-value> {
             make $<attr-key>.made => $<attr-value>.made;
@@ -604,8 +612,11 @@ class TreeMaker {
     }
 
     # TODO It would be nicer if we had a case-insensitive hash
-    method attr-key($/)   { make $!xml ?? ~$/ !! (~$/).lc }
-    method attr-value($/) { make html-unescape ~$<raw-value> }
+    method attr-key($/)    { make $!xml ?? ~$/ !! (~$/).lc }
+    method attr-value($/)  { make html-unescape ~$<raw-value> }
+    method attr-broken($/) {
+        make (~$/).comb(/ <-[ < > = \s / ]>+ /).first(*.chars > 0)
+    }
 }
 
 our sub _parse($html, Bool :$xml! is rw) {
