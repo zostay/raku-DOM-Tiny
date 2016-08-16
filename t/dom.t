@@ -4,68 +4,24 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Ensure HTML semantics
-# ok !DOM::Tiny.new.xml(Nil).parse('<?xml version="1.0"?>').xml,
-#   'XML mode not detected';
-# $dom
-#   = DOM::Tiny.new.xml(0).parse('<?xml version="1.0"?><br><div>Test</div>');
-# is $dom.at('div:root').text, 'Test', 'right text';
-#
-# # Ensure XML semantics
-# ok !!DOM::Tiny.new.xml(1).parse('<foo />').xml, 'XML mode active';
-# my $dom = DOM::Tiny.parse(<<'EOF');
-# <?xml version='1.0' encoding='UTF-8'?>
-# <script>
-#   <table>
-#     <td>
-#       <tr><thead>foo<thead></tr>
-#     </td>
-#     <td>
-#       <tr><thead>bar<thead></tr>
-#     </td>
-#   </table>
-# </script>
-# EOF
-# is $dom.find('table > td > tr > thead').[0].text, 'foo', 'right text';
-# is $dom.find('script > table > td > tr > thead').[1].text, 'bar',
-#   'right text';
-# is $dom.find('table > td > tr > thead').[2], Nil, 'no result';
-# is $dom.find('table > td > tr > thead').elems, 2, 'right number of elements';
-#
-# # Ensure XML semantics again
-# my $dom = DOM::Tiny.new.xml(1).parse(<<'EOF');
-# <table>
-#   <td>
-#     <tr><thead>foo<thead></tr>
-#   </td>
-#   <td>
-#     <tr><thead>bar<thead></tr>
-#   </td>
-# </table>
-# EOF
-# is $dom.find('table > td > tr > thead').[0].text, 'foo', 'right text';
-# is $dom.find('table > td > tr > thead').[1].text, 'bar', 'right text';
-# is $dom.find('table > td > tr > thead').[2], Nil, 'no result';
-# is $dom.find('table > td > tr > thead').elems, 2, 'right number of elements';
-#
-# # Nested tables
-# my $dom = DOM::Tiny.parse(<<'EOF');
-# <table id="foo">
-#   <tr>
-#     <td>
-#       <table id="bar">
-#         <tr>
-#           <td>baz</td>
-#         </tr>
-#       </table>
-#     </td>
-#   </tr>
-# </table>
-# EOF
-# is $dom.find('#foo > tr > td > #bar > tr >td').[0].text, 'baz', 'right text';
-# is $dom.find('table > tr > td > table > tr >td').[0].text, 'baz',
-#   'right text';
-#
+# Nested tables
+my $dom = DOM::Tiny.parse(q:to/EOF/);
+<table id="foo">
+  <tr>
+    <td>
+      <table id="bar">
+        <tr>
+          <td>baz</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+EOF
+is $dom.find('#foo > tr > td > #bar > tr >td').[0].text, 'baz', 'right text';
+is $dom.find('table > tr > td > table > tr >td').[0].text, 'baz',
+  'right text';
+
 # # Nested find
 # $dom.parse(q:to/EOF/);
 # <c>
