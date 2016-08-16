@@ -92,17 +92,15 @@ my class AttrIs is HasAttr {
         return $!rx with $!rx;
 
         my $unescaped = _unescape($!value);
+        my $unescaped-re = $!i ?? rx:i{ $unescaped } !! rx{ $unescaped };
 
-        my $rx = do given $!op {
-            when '~=' { rx{ [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
-            when '*=' { rx{ $unescaped } }
-            when '^=' { rx{ ^ $unescaped } }
-            when '$=' { rx{ $unescaped $ } }
-            default   { rx{ ^ $unescaped $ } }
+        $!rx := do given $!op {
+            when '~=' { rx{ [ ^ | \s+ ] $unescaped-re [ \s+ | $ ] } }
+            when '*=' { rx{ $unescaped-re } }
+            when '^=' { rx{ ^ $unescaped-re } }
+            when '$=' { rx{ $unescaped-re $ } }
+            default   { rx{ ^ $unescaped-re $ } }
         }
-
-        $rx = rx:i{ $rx } if $!i;
-        $!rx := $rx;
     }
 
     multi method ACCEPTS(::?CLASS:D: Tag:D $current) {
@@ -280,7 +278,7 @@ grammar Selector {
     token attr-value { [
             || '"' $<value> = [ [ '\\"' | <-["]> ]* ] '"'
             || "'" $<value> = [ [ "\\'" | <-[']> ]* ] "'"
-            || $<value> = [ <-[ \] ]>+ ]
+            || $<value> = [ <-[ \  \] ]>+ ]
         ]
         [ \s+ $<case-i> = 'i' ]?
     }
