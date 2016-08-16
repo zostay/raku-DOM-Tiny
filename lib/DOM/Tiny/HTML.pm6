@@ -500,7 +500,7 @@ class TreeMaker {
 
                 when Text {
                     $current.children.push: Text.new(
-                        text   => %markup<text>,
+                        text   => html-unescape(%markup<text>),
                         parent => $current,
                     );
                 }

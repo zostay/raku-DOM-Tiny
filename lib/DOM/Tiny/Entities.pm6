@@ -28,7 +28,7 @@ multi html-unescape(Str:D $str) returns Str is export {
         '&' [ '#'
                 # decimal entity
                 $<dec> = [ <[ 0..9 ]> ** 1..7 ]
-                # hexidecimal entitye
+                # hexidecimal entity
                 | 'x' $<hex> = [ <[ 0..9 a..f A..F ]> ** 1..6 ] ';'
             # word entity
             | $<name> = [ \w+ ';'? ] ]
