@@ -4,32 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Append and prepend content
-# my $dom = DOM::Tiny.parse('<a><b>Test<c /></b></a>');
-# $dom.at('b').append_content('<d />');
-# is $dom.children.[0].tag, 'a', 'right tag';
-# is $dom.all-text, 'Test', 'right text';
-# is $dom.at('c').parent.tag, 'b', 'right tag';
-# is $dom.at('d').parent.tag, 'b', 'right tag';
-# $dom.at('b').prepend_content('<e>DOM</e>');
-# is $dom.at('e').parent.tag, 'b', 'right tag';
-# is $dom.all-text, 'DOM Test', 'right text';
-#
-# # Wrap elements
-# my $dom = DOM::Tiny.parse('<a>Test</a>');
-# is "$dom", '<a>Test</a>', 'right result';
-# is $dom.wrap('<b></b>').type, 'root', 'right type';
-# is "$dom", '<a>Test</a>', 'no changes';
-# is $dom.at('a').wrap('<b></b>').type, 'tag', 'right type';
-# is "$dom", '<b><a>Test</a></b>', 'right result';
-# is $dom.at('b').strip.at('a').wrap('A').tag, 'a', 'right tag';
-# is "$dom", '<a>Test</a>', 'right result';
-# is $dom.at('a').wrap('<b></b>').tag, 'a', 'right tag';
-# is "$dom", '<b><a>Test</a></b>', 'right result';
-# is $dom.at('a').wrap('C<c><d>D</d><e>E</e></c>F').parent.tag, 'd',
-#   'right tag';
-# is "$dom", '<b>C<c><d>D<a>Test</a></d><e>E</e></c>F</b>', 'right result';
-#
 # # Wrap content
 # my $dom = DOM::Tiny.parse('<a>Test</a>');
 # is $dom.at('a').wrap_content('A').tag, 'a', 'right tag';

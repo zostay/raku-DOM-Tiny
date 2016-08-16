@@ -323,6 +323,7 @@ method val(DOM::Tiny:D:) returns Str {
 }
 
 method wrap(DOM::Tiny:D: Str:D $html, Bool :$xml = $!xml) {
+    return self if $!tree ~~ Root;
     _wrap($!tree.parent, ($!tree,), $html, :$xml);
     self
 }
@@ -385,6 +386,8 @@ my sub _wrap($parent, @nodes, $html, :$xml! is copy) {
     while $innermost.child-nodes(:tags-only)[0] -> $next-inner {
         $innermost = $next-inner;
     }
+
+    return if $innermost ~~ Root;
 
     $innermost.children.append: _link($innermost, @nodes);
     my $i = $parent.children.first({ $_ === any(|@nodes) }, :k) // *;
