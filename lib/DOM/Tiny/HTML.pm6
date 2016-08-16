@@ -9,7 +9,7 @@ grammar XMLTokenizer {
     token ml-token { <markup> }
 
     proto token markup { * }
-    token markup:sym<doctype> { :i '<!DOCTYPE' <.ws> <doctype> '>' }
+    token markup:sym<doctype> { :i '<!DOCTYPE' <.ws> <doctype> <.ws> '>' }
     token markup:sym<comment> { '<!--' $<comment> = [ .*? ] '-->' }
     token markup:sym<cdata> { '<![CDATA[' $<cdata> = [ .*? ] ']]>' }
     token markup:sym<pi> { '<?' $<pi> = [ .*? ] '?>' }
@@ -21,13 +21,14 @@ grammar XMLTokenizer {
 
     rule doctype {
         <root-element>
-        [ <pub-priv>? <external-id>+ ]?
+        [ <pub-priv>? <external-id> +% <.ws> ]?
         [ '[' <internal-subset> ']' ]?
     }
     token root-element { \w+ }
     token pub-priv { \w+ }
     token external-id { '"' <-["]>* '"' | "'" <-[']>* "'" }
     token doctype-uri { <-[ \] ]>+ }
+    token internal-subset { <-[ \] ]>+ }
 
     token end-mark { '/' }
     token empty-tag-mark { '/' }
