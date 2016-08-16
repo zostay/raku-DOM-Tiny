@@ -52,7 +52,10 @@ grammar HTMLTokenizer is XMLTokenizer {
         [ <attr> <.ws> ]* <.ws> '>'
         { $ = $<start> } # Why does this fix the regex?
         $<raw-text> = [ .*? ]
-        '<' <.ws> '/' <.ws> "$<start>" <.ws> '>'
+        [
+            | '<' <.ws> '/' <.ws> "$<start>" <.ws> '>'
+            | $
+        ]
     }
 
     token raw-tag { :i [ script | style ] }
