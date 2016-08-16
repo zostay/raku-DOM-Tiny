@@ -4,60 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Broken "div" in "td"
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <table>
-#   <tr>
-#     <td><div id="A"></td>
-#     <td><div id="B"></td>
-#   </tr>
-# </table>
-# EOF
-# is $dom.find('table tr td').[0].at('div')<id>, 'A', 'right attribute';
-# is $dom.find('table tr td').[1].at('div')<id>, 'B', 'right attribute';
-# is $dom.find('table tr td').[2], Nil, 'no result';
-# is $dom.find('table tr td').elems, 2, 'right number of elements';
-# is "$dom", q:to/EOF/, 'right result';
-# <table>
-#   <tr>
-#     <td><div id="A"></div></td>
-#     <td><div id="B"></div></td>
-#   </tr>
-# </table>
-# EOF
-#
-# # Preformatted text
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <div>
-#   looks
-#   <pre><code>like
-#   it
-#     really</code>
-#   </pre>
-#   works
-# </div>
-# EOF
-# is $dom.text, '', 'no text';
-# is $dom.text(0), "\n", 'right text';
-# is $dom.all-text, "looks like\n  it\n    really\n  works", 'right text';
-# is $dom.all-text(0), "\n  looks\n  like\n  it\n    really\n  \n  works\n\n",
-#   'right text';
-# is $dom.at('div').text, 'looks works', 'right text';
-# is $dom.at('div').text(0), "\n  looks\n  \n  works\n", 'right text';
-# is $dom.at('div').all-text, "looks like\n  it\n    really\n  works",
-#   'right text';
-# is $dom.at('div').all-text(0),
-#   "\n  looks\n  like\n  it\n    really\n  \n  works\n", 'right text';
-# is $dom.at('div pre').text, "\n  ", 'right text';
-# is $dom.at('div pre').text(0), "\n  ", 'right text';
-# is $dom.at('div pre').all-text, "like\n  it\n    really\n  ", 'right text';
-# is $dom.at('div pre').all-text(0), "like\n  it\n    really\n  ", 'right text';
-# is $dom.at('div pre code').text, "like\n  it\n    really", 'right text';
-# is $dom.at('div pre code').text(0), "like\n  it\n    really", 'right text';
-# is $dom.at('div pre code').all-text, "like\n  it\n    really", 'right text';
-# is $dom.at('div pre code').all-text(0), "like\n  it\n    really",
-#   'right text';
-#
 # # Form values
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
 # <form action="/foo">

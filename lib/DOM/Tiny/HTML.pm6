@@ -246,7 +246,7 @@ role HasChildren is export {
         my $previous-chunk = '';
         [~] gather for self.child-nodes.grep($which-children)\
                                        .map({ .text(:$trim, :$recurse) })\
-                                       .grep({ / \S+ / or !$trim }) -> $chunk {
+                                       .grep({ / \S / or !$trim }) -> $chunk {
 
             if $previous-chunk ~~ / \S $ / && $chunk ~~ /^ <-[ . ! ? , ; : \s ]>+ / {
                 take " $chunk";
@@ -331,6 +331,11 @@ class Raw is export is DocumentNode does TextNode {
 class Tag is export is DocumentNode does HasChildren {
     has Str $.tag is rw is required;
     has %.attr is rw;
+
+    method trimmable(Tag:D:) returns Bool {
+        return False if $!tag eq 'pre';
+        callsame();
+    }
 
     method render(:$xml) {
         # Start tag
