@@ -21,6 +21,10 @@ method AT-POS(DOM::Tiny:D: Int:D $i) is rw returns DOM::Tiny {
 }
 method list(DOM::Tiny:D:) { self.child-nodes }
 
+method EXISTS-KEY(DOM::Tiny:D: Str:D $k) {
+    $!tree.attr{$k}:exists
+}
+
 method AT-KEY(DOM::Tiny:D: Str:D $k) is rw {
     my $tree = self;
     Proxy.new(
@@ -303,7 +307,7 @@ method type(DOM::Tiny:D:) { $!tree.WHAT }
 
 my multi _val(Tag, 'option', $dom) { $dom<value> // $dom.text }
 my multi _val(Tag, 'input', $dom) {
-    if $dom<type> eq 'radio' | 'checkbox' {
+    if $dom<type>.defined && $dom<type> eq 'radio' | 'checkbox' {
         $dom<value> // 'on';
     }
     else {
@@ -314,11 +318,12 @@ my multi _val(Tag, 'button', $dom) { $dom<value> }
 my multi _val(Tag, 'textarea', $dom) { $dom.text }
 my multi _val(Tag, 'select', $dom) {
     my $v = $dom.find('option:checked').map({ .val });
-    $dom<multiple>:exists ?? $v !! $v[*]
+    return $v if $dom<multiple>:exists;
+    $v[*-1] // Nil
 }
 my multi _val($, $, $dom) { Nil }
 
-method val(DOM::Tiny:D:) returns Str {
+method val(DOM::Tiny:D:) {
     _val($.type, $.tag, self);
 }
 
