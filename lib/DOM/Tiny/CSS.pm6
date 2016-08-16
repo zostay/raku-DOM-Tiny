@@ -93,7 +93,7 @@ my class AttrIs is HasAttr {
         my $unescaped = _unescape($!value);
 
         my $rx = do given $!op {
-            when '~=' { rx{  [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
+            when '~=' { rx{ [ ^ | \s+ ] $unescaped [ \s+ | $ ] } }
             when '*=' { rx{ $unescaped } }
             when '^=' { rx{ ^ $unescaped } }
             when '$=' { rx{ $unescaped $ } }
@@ -225,11 +225,11 @@ grammar Selector {
 
     token node-match { <selector>+ }
 
-    proto rule selector      { * }
-    rule selector:sym<class> { '.' <name> }
-    rule selector:sym<id>    { '#' <name> }
-    rule selector:sym<attr>  {
-        '[' <attr-key> [ <attr-op> <attr-value> ]? ']'
+    proto token selector      { * }
+    token selector:sym<class> { '.' <name> }
+    token selector:sym<id>    { '#' <name> }
+    token selector:sym<attr>  {
+        '[' <.ws> <attr-key> <.ws> [ <attr-op> <.ws> <attr-value> <.ws> ]? ']'
     }
     token selector:sym<pseudo-class> {
         ':' <pseudo-class>
@@ -239,13 +239,13 @@ grammar Selector {
     }
     token selector:sym<any> { '*' }
 
-    proto rule pseudo-class { * }
-    rule pseudo-class:sym<not>   { :i not '(' <TOP> ')' }
-    rule pseudo-class:sym<nth>   { <nth-x> '(' <equation> ')' }
-    rule pseudo-class:sym<first> { <first-x> }
-    rule pseudo-class:sym<last>  { <last-x> }
-    rule pseudo-class:sym<only>  { <only-x> }
-    rule pseudo-class:sym<other> {
+    proto token pseudo-class { * }
+    token pseudo-class:sym<not>   { :i not '(' <TOP> ')' }
+    token pseudo-class:sym<nth>   { <nth-x> '(' <.ws> <equation> <.ws> ')' }
+    token pseudo-class:sym<first> { <first-x> }
+    token pseudo-class:sym<last>  { <last-x> }
+    token pseudo-class:sym<only>  { <only-x> }
+    token pseudo-class:sym<other> {
         | :i empty
         | :i checked
         | :i root
@@ -262,9 +262,9 @@ grammar Selector {
     token only-x  { :i 'only-child'  | :i 'only-of-type' }
 
     proto rule equation { * }
-    rule equation:sym<even>     { :i even }
-    rule equation:sym<odd>      { :i odd }
-    rule equation:sym<number>   { $<number> = [ <[+-]>? \d+ ] }
+    token equation:sym<even>     { :i even }
+    token equation:sym<odd>      { :i odd }
+    token equation:sym<number>   { $<number> = [ <[+-]>? \d+ ] }
     token equation:sym<function> {
         | <.ws> <coeff> :i n <.ws> $<offset> = <.full-offset> <.ws>
         | <.ws> <coeff> :i n <.ws>
@@ -291,7 +291,7 @@ grammar Selector {
     token attr-op:sym<$=> { '$=' }
     token attr-op:sym<*=> { '*=' }
 
-    token name { [ <.escape> | '\\.' | <-[,.#:[) >~+]> ]+ } #]
+    token name { [ <.escape> \s | '\\.' | <-[,.#:[\ )>~+]> ]+ } #]
     token escape {
         | '\\' <-[0..9 a..f A..F]>
         | '\\' <[0..9 a..f A..F]> ** 1..6
@@ -410,9 +410,7 @@ class Compiler {
         make \(value => ~$<value>, :$i);
     }
 
-    method name($/) {
-        make (~$/).trim;
-    }
+    method name($/) { make ~$/ }
 }
 
 has $.tree is rw;

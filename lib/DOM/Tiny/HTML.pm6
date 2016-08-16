@@ -34,12 +34,21 @@ grammar XMLTokenizer {
     token empty-tag-mark { '/' }
     token tag-name { <-[ < > \s / ]>+ }
 
-    rule attr { <attr-key> [ '=' <attr-value> ]? }
+    rule attr {
+        || <attr-key> [ '=' <attr-value> ]?
+        || <attr-broken>
+    }
     token attr-key { <-[ < > = \s \/ ]>+ }
     token attr-value {
         | [ '"' $<raw-value> = [ .*? ] '"'  ]
         | [ "'" $<raw-value> = [ .*? ] "'" ]
         | [ $<raw-value> = <-[ > \s ]>* ]
+    }
+    token attr-broken {
+        [
+        | <-[ \s < > / ]>
+        | '/' <!before <.ws> '>' >
+        ]+
     }
 }
 
@@ -577,7 +586,10 @@ class TreeMaker {
     }
 
     method attr($/) {
-        if $<attr-value> {
+        if $<attr-broken> {
+            make ~$<attr-broken> => Nil;
+        }
+        elsif $<attr-value> {
             make $<attr-key>.made => $<attr-value>.made;
         }
         else {
