@@ -4,37 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Direct hash access to attributes in HTML mode
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <a id="one">
-#   <B class="two" test>
-#     foo
-#     <c id="three">bar</c>
-#     <c ID="four">baz</c>
-#   </B>
-# </a>
-# EOF
-# ok !$dom.xml, 'XML mode not active';
-# is $dom.at('a')<id>, 'one', 'right attribute';
-# is-deeply [sort keys %{$dom.at('a')}], ['id'], 'right attributes';
-# is $dom.at('a').at('b').text, 'foo', 'right text';
-# is $dom.at('b')<class>, 'two', 'right attribute';
-# is-deeply [sort keys %{$dom.at('a b')}], <class test>, 'right attributes';
-# is $dom.find('a b c').[0].text, 'bar', 'right text';
-# is $dom.find('a b c').[0]{id}, 'three', 'right attribute';
-# is-deeply [sort keys %{$dom.find('a b c').[0]}], ['id'], 'right attributes';
-# is $dom.find('a b c').[1].text, 'baz', 'right text';
-# is $dom.find('a b c').[1]{id}, 'four', 'right attribute';
-# is-deeply [sort keys %{$dom.find('a b c').[1]}], ['id'], 'right attributes';
-# is $dom.find('a b c').[2], Nil, 'no result';
-# is $dom.find('a b c').elems, 2, 'right number of elements';
-# @results = $dom.find('a b c').map({ .text });
-# is-deeply @results, <bar baz>, 'right results';
-# is $dom.find('a b c').join("\n"),
-#   qq{<c id="three">bar</c>\n<c id="four">baz</c>}, 'right result';
-# is-deeply [keys %$dom], [], 'root has no attributes';
-# is $dom.find('#nothing').join, '', 'no result';
-#
 # # Append and prepend content
 # my $dom = DOM::Tiny.parse('<a><b>Test<c /></b></a>');
 # $dom.at('b').append_content('<d />');
