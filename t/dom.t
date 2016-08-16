@@ -4,29 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Broken "br" tag
-# my $dom = DOM::Tiny.parse('<br< abc abc abc abc abc abc abc abc<p>Test</p>');
-# is $dom.at('p').text, 'Test', 'right text';
-#
-# # Modifying an XML document
-# my $dom = DOM::Tiny.parse(<<'EOF');
-# <?xml version='1.0' encoding='UTF-8'?>
-# <XMLTest />
-# EOF
-# ok $dom.xml, 'XML mode detected';
-# $dom.at('XMLTest').content('<Element />');
-# my $element = $dom.at('Element');
-# is $element.tag, 'Element', 'right tag';
-# ok $element.xml, 'XML mode active';
-# $element = $dom.at('XMLTest').children.[0];
-# is $element.tag, 'Element', 'right child';
-# is $element.parent.tag, 'XMLTest', 'right parent';
-# ok $element.root.xml, 'XML mode active';
-# $dom.replace('<XMLTest2 /><XMLTest3 just="works" />');
-# ok $dom.xml, 'XML mode active';
-# $dom.at('XMLTest2')<foo> = Nil;
-# is $dom, '<XMLTest2 foo="foo" /><XMLTest3 just="works" />', 'right result';
-#
 # # Ensure HTML semantics
 # ok !DOM::Tiny.new.xml(Nil).parse('<?xml version="1.0"?>').xml,
 #   'XML mode not detected';

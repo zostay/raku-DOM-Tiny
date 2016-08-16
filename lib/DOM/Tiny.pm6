@@ -97,9 +97,15 @@ multi method attr(DOM::Tiny:D: Str:D $name) returns Str {
     $!tree.attr{ $name } // Str;
 }
 
-multi method attr(DOM::Tiny:D: Str:D $name, Str:D $value) returns DOM::Tiny:D {
+multi method attr(DOM::Tiny:D: Str:D $name, Str $value) returns DOM::Tiny:D {
     return self unless $!tree ~~ Tag;
     $!tree.attr{ $name } = $value;
+    self;
+}
+
+multi method attr(DOM::Tiny:D: Str:D $name, Nil) returns DOM::Tiny:D {
+    return self unless $!tree ~~ Tag;
+    $!tree.attr{ $name } = Nil;
     self;
 }
 
@@ -127,8 +133,8 @@ method children(DOM::Tiny:D: Str $css?) {
 
 multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D {
     given $tree.type {
-        when Root        { $!tree.content($tree.tree.children) }
-        default          { $!tree.content($tree) }
+        when Root        { $!tree.content(_link($!tree, $tree.tree.children)) }
+        default          { $!tree.content(_link($!tree, @=$tree)) }
     }
     self;
 }
@@ -247,7 +253,7 @@ method previous-node(DOM::Tiny:D:) {
 method remove(DOM::Tiny:D:) { self.replace('') }
 
 multi method replace(DOM::Tiny:D: Str:D $html) {
-    self.replace(DOM::Tiny.parse($html));
+    self.replace(DOM::Tiny.parse($html, :$!xml));
 }
 
 multi method replace(DOM::Tiny:D: DOM::Tiny:D $tree) {
