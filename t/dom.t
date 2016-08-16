@@ -4,20 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Wrap content
-# my $dom = DOM::Tiny.parse('<a>Test</a>');
-# is $dom.at('a').wrap_content('A').tag, 'a', 'right tag';
-# is "$dom", '<a>Test</a>', 'right result';
-# is $dom.wrap_content('<b></b>').type, 'root', 'right type';
-# is "$dom", '<b><a>Test</a></b>', 'right result';
-# is $dom.at('b').strip.at('a').tag('e:a').wrap_content('1<b c="d"></b>')
-#   .tag, 'e:a', 'right tag';
-# is "$dom", '<e:a>1<b c="d">Test</b></e:a>', 'right result';
-# is $dom.at('a').wrap_content('C<c><d>D</d><e>E</e></c>F').parent.type,
-#   'root', 'right type';
-# is "$dom", '<e:a>C<c><d>D1<b c="d">Test</b></d><e>E</e></c>F</e:a>',
-#   'right result';
-#
 # # Broken "div" in "td"
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
 # <table>

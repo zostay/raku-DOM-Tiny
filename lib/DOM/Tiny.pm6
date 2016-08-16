@@ -328,7 +328,7 @@ method wrap(DOM::Tiny:D: Str:D $html, Bool :$xml = $!xml) {
     self
 }
 method wrap-content(DOM::Tiny:D: Str:D $html, Bool :$xml = $!xml) {
-    _wrap($!tree, $!tree.children, $html) if $!tree ~~ HasChildren;
+    _wrap($!tree, $!tree.children, $html, :$xml) if $!tree ~~ HasChildren;
     self
 }
 
@@ -381,7 +381,7 @@ method !siblings(:$tags-only = False, :$pos) {
     %split;
 }
 
-my sub _wrap($parent, @nodes, $html, :$xml! is copy) {
+my sub _wrap($parent, @nodes is copy, $html, :$xml! is copy) {
     my $innermost = my $wrapper = DOM::Tiny::HTML::_parse($html, :$xml);
     while $innermost.child-nodes(:tags-only)[0] -> $next-inner {
         $innermost = $next-inner;
@@ -392,5 +392,5 @@ my sub _wrap($parent, @nodes, $html, :$xml! is copy) {
     $innermost.children.append: _link($innermost, @nodes);
     my $i = $parent.children.first({ $_ === any(|@nodes) }, :k) // *;
     $parent.children.splice: $i, 0, _link($parent, $wrapper.children);
-    $parent.children .= grep({ $_ !=== any(|@nodes) });
+    $parent.children .= grep(none(|@nodes));
 }
