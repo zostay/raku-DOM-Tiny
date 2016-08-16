@@ -4,60 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Nested description lists
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <dl>
-#   <dt>A</dt>
-#   <DD>
-#     <dl>
-#       <dt>B
-#       <dd>C
-#     </dl>
-#   </dd>
-# </dl>
-# EOF
-# is $dom.find('dl > dd > dl > dt').[0].text, 'B', 'right text';
-# is $dom.find('dl > dd > dl > dd').[0].text, 'C', 'right text';
-# is $dom.find('dl > dt').[0].text,           'A', 'right text';
-#
-# # Nested lists
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <div>
-#   <ul>
-#     <li>
-#       A
-#       <ul>
-#         <li>B</li>
-#         C
-#       </ul>
-#     </li>
-#   </ul>
-# </div>
-# EOF
-# is $dom.find('div > ul > li').[0].text, 'A', 'right text';
-# is $dom.find('div > ul > li').[1], Nil, 'no result';
-# is $dom.find('div > ul li').[0].text, 'A', 'right text';
-# is $dom.find('div > ul li').[1].text, 'B', 'right text';
-# is $dom.find('div > ul li').[2], Nil, 'no result';
-# is $dom.find('div > ul ul').[0].text, 'C', 'right text';
-# is $dom.find('div > ul ul').[1], Nil, 'no result';
-#
-# # Unusual order
-# $dom
-#   = DOM::Tiny.parse('<a href="http://example.com" id="foo" class="bar">Ok!</a>');
-# is $dom.at('a:not([href$=foo])[href^=h]').text, 'Ok!', 'right text';
-# is $dom.at('a:not([href$=example.com])[href^=h]'), Nil, 'no result';
-# is $dom.at('a[href^=h]#foo.bar').text, 'Ok!', 'right text';
-# is $dom.at('a[href^=h]#foo.baz'), Nil, 'no result';
-# is $dom.at('a[href^=h]#foo:not(b)').text, 'Ok!', 'right text';
-# is $dom.at('a[href^=h]#foo:not(a)'), Nil, 'no result';
-# is $dom.at('[href^=h].bar:not(b)[href$=m]#foo').text, 'Ok!', 'right text';
-# is $dom.at('[href^=h].bar:not(b)[href$=m]#bar'), Nil, 'no result';
-# is $dom.at(':not(b)#foo#foo').text, 'Ok!', 'right text';
-# is $dom.at(':not(b)#foo#bar'), Nil, 'no result';
-# is $dom.at(':not([href^=h]#foo#bar)').text, 'Ok!', 'right text';
-# is $dom.at(':not([href^=h]#foo#foo)'), Nil, 'no result';
-#
 # # Slash between attributes
 # my $dom = DOM::Tiny.parse('<input /type=checkbox / value="/a/" checked/><br/>');
 # is-deeply $dom.at('input').attr,
