@@ -47,7 +47,7 @@ grammar HTMLTokenizer is XMLTokenizer {
         <!before <.raw-tag> > <-[ < > \s / ]>+
     }
 
-    token markup:sym<raw> {
+    token markup:sym<raw> { :i
         '<' <.ws> $<start> = <raw-tag> <.ws>
         [ <attr> <.ws> ]* <.ws> '>'
         { $ = $<start> } # Why does this fix the regex?
@@ -56,7 +56,6 @@ grammar HTMLTokenizer is XMLTokenizer {
     }
 
     token raw-tag { :i [ script | style ] }
-    #token raw-tag { :i [ script | style ] }
 
     token ml-token { <markup> || <runaway-lt> }
     token runaway-lt { '<' }
