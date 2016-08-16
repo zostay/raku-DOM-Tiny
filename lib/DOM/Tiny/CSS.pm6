@@ -32,6 +32,7 @@ my class Joiner {
     }
 
     my multi try-combination('>', $test, @next, $current) {
+        return False if $*TREE-CONTEXT.defined && $current === $*TREE-CONTEXT;
         return False unless $current.parent ~~ $test;
         next-combination(@next, $current.parent);
     }
