@@ -4,116 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # Broken "font" block and useless end tags
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head><title>Test</title></head>
-#   <body>
-#     <table>
-#       <tr><td><font>test</td></font></tr>
-#       </tr>
-#     </table>
-#   </body>
-# </html>
-# EOF
-# is $dom.at('html > head > title').text,          'Test', 'right text';
-# is $dom.at('html body table tr td > font').text, 'test', 'right text';
-#
-# # Different broken "font" block
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head><title>Test</title></head>
-#   <body>
-#     <font>
-#     <table>
-#       <tr>
-#         <td>test1<br></td></font>
-#         <td>test2<br>
-#     </table>
-#   </body>
-# </html>
-# EOF
-# is $dom.at('html > head > title').text, 'Test', 'right text';
-# is $dom.find('html > body > font > table > tr > td').[0].text, 'test1',
-#   'right text';
-# is $dom.find('html > body > font > table > tr > td').[1].text, 'test2',
-#   'right text';
-#
-# # Broken "font" and "div" blocks
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head><title>Test</title></head>
-#   <body>
-#     <font>
-#     <div>test1<br>
-#       <div>test2<br></font>
-#     </div>
-#   </body>
-# </html>
-# EOF
-# is $dom.at('html head title').text,            'Test',  'right text';
-# is $dom.at('html body font > div').text,       'test1', 'right text';
-# is $dom.at('html body font > div > div').text, 'test2', 'right text';
-#
-# # Broken "div" blocks
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head><title>Test</title></head>
-#   <body>
-#     <div>
-#     <table>
-#       <tr><td><div>test</td></div></tr>
-#       </div>
-#     </table>
-#   </body>
-# </html>
-# EOF
-# is $dom.at('html head title').text,                 'Test', 'right text';
-# is $dom.at('html body div table tr td > div').text, 'test', 'right text';
-#
-# # And another broken "font" block
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <html>
-#   <head><title>Test</title></head>
-#   <body>
-#     <table>
-#       <tr>
-#         <td><font><br>te<br>st<br>1</td></font>
-#         <td>x1<td><img>tes<br>t2</td>
-#         <td>x2<td><font>t<br>est3</font></td>
-#       </tr>
-#     </table>
-#   </body>
-# </html>
-# EOF
-# is $dom.at('html > head > title').text, 'Test', 'right text';
-# is $dom.find('html body table tr > td > font').[0].text, 'te st 1',
-#   'right text';
-# is $dom.find('html body table tr > td').[1].text, 'x1',     'right text';
-# is $dom.find('html body table tr > td').[2].text, 'tes t2', 'right text';
-# is $dom.find('html body table tr > td').[3].text, 'x2',     'right text';
-# is $dom.find('html body table tr > td').[5], Nil, 'no result';
-# is $dom.find('html body table tr > td').size, 5, 'right number of elements';
-# is $dom.find('html body table tr > td > font').[1].text, 't est3',
-#   'right text';
-# is $dom.find('html body table tr > td > font').[2], Nil, 'no result';
-# is $dom.find('html body table tr > td > font').size, 2,
-#   'right number of elements';
-# is $dom, q:to/EOF/, 'right result';
-# <html>
-#   <head><title>Test</title></head>
-#   <body>
-#     <table>
-#       <tr>
-#         <td><font><br>te<br>st<br>1</font></td>
-#         <td>x1</td><td><img>tes<br>t2</td>
-#         <td>x2</td><td><font>t<br>est3</font></td>
-#       </tr>
-#     </table>
-#   </body>
-# </html>
-# EOF
-#
 # # A collection of wonderful screwups
 # my $dom = DOM::Tiny.parse(<<'EOF');
 # <!DOCTYPE html>
@@ -138,7 +28,7 @@ use DOM::Tiny;
 # is $dom.find('#screw-up .ewww > a > img').[1].attr('src'), '/test2.png',
 #   'right attribute';
 # is $dom.find('#screw-up .ewww > a > img').[2], Nil, 'no result';
-# is $dom.find('#screw-up .ewww > a > img').size, 2, 'right number of elements';
+# is $dom.find('#screw-up .ewww > a > img').elems, 2, 'right number of elements';
 #
 # # Broken "br" tag
 # my $dom = DOM::Tiny.parse('<br< abc abc abc abc abc abc abc abc<p>Test</p>');
@@ -189,7 +79,7 @@ use DOM::Tiny;
 # is $dom.find('script > table > td > tr > thead').[1].text, 'bar',
 #   'right text';
 # is $dom.find('table > td > tr > thead').[2], Nil, 'no result';
-# is $dom.find('table > td > tr > thead').size, 2, 'right number of elements';
+# is $dom.find('table > td > tr > thead').elems, 2, 'right number of elements';
 #
 # # Ensure XML semantics again
 # my $dom = DOM::Tiny.new.xml(1).parse(<<'EOF');
@@ -205,7 +95,7 @@ use DOM::Tiny;
 # is $dom.find('table > td > tr > thead').[0].text, 'foo', 'right text';
 # is $dom.find('table > td > tr > thead').[1].text, 'bar', 'right text';
 # is $dom.find('table > td > tr > thead').[2], Nil, 'no result';
-# is $dom.find('table > td > tr > thead').size, 2, 'right number of elements';
+# is $dom.find('table > td > tr > thead').elems, 2, 'right number of elements';
 #
 # # Nested tables
 # my $dom = DOM::Tiny.parse(<<'EOF');
@@ -273,7 +163,7 @@ use DOM::Tiny;
 # is $dom.find('a B c').[1]{ID}, 'four', 'right attribute';
 # is-deeply [sort keys %{$dom.find('a B c').[1]}], ['ID'], 'right attributes';
 # is $dom.find('a B c').[2], Nil, 'no result';
-# is $dom.find('a B c').size, 2, 'right number of elements';
+# is $dom.find('a B c').elems, 2, 'right number of elements';
 # @results = $dom.find('a B c').map({ .text });
 # is-deeply @results, <bar baz>, 'right results';
 # is $dom.find('a B c').join("\n"),
@@ -304,7 +194,7 @@ use DOM::Tiny;
 # is $dom.find('a b c').[1]{id}, 'four', 'right attribute';
 # is-deeply [sort keys %{$dom.find('a b c').[1]}], ['id'], 'right attributes';
 # is $dom.find('a b c').[2], Nil, 'no result';
-# is $dom.find('a b c').size, 2, 'right number of elements';
+# is $dom.find('a b c').elems, 2, 'right number of elements';
 # @results = $dom.find('a b c').map({ .text });
 # is-deeply @results, <bar baz>, 'right results';
 # is $dom.find('a b c').join("\n"),
@@ -364,7 +254,7 @@ use DOM::Tiny;
 # is $dom.find('table tr td').[0].at('div')<id>, 'A', 'right attribute';
 # is $dom.find('table tr td').[1].at('div')<id>, 'B', 'right attribute';
 # is $dom.find('table tr td').[2], Nil, 'no result';
-# is $dom.find('table tr td').size, 2, 'right number of elements';
+# is $dom.find('table tr td').elems, 2, 'right number of elements';
 # is "$dom", q:to/EOF/, 'right result';
 # <table>
 #   <tr>
@@ -502,7 +392,7 @@ use DOM::Tiny;
 # is $dom.find('entry').[1].at('addresses formatted').text(0),
 #   "742 Evergreen Terrace\nSpringfield, VT 12345 USA", 'right text';
 # is $dom.find('entry').[2], Nil, 'no result';
-# is $dom.find('entry').size, 2, 'right number of elements';
+# is $dom.find('entry').elems, 2, 'right number of elements';
 #
 # # Find attribute with hyphen in name and value
 # my $dom = DOM::Tiny.parse(q:to/EOF/);
@@ -587,7 +477,7 @@ use DOM::Tiny;
 # is $dom.find('[class=foo]').map('text').join(','),     'A',   'right result';
 # is $dom.find('[class=foo i]').map('text').join(','),   'A,C', 'right result';
 # is $dom.find('[class="foo" i]').map('text').join(','), 'A,C', 'right result';
-# is $dom.find('[class="foo bar"]').size, 0, 'no results';
+# is $dom.find('[class="foo bar"]').elems, 0, 'no results';
 # is $dom.find('[class="foo bar" i]').map('text').join(','), 'B',
 #   'right result';
 # is $dom.find('[class~=foo]').map('text').join(','), 'A,B', 'right result';
@@ -694,7 +584,7 @@ use DOM::Tiny;
 # is $dom.at('div > div > pre').text, 'test', 'right text';
 # is "$dom", '<div><div><pre>test</pre></div>123</div>', 'right result';
 # my $dom = DOM::Tiny.parse('<p /><svg><circle /><circle /></svg>');
-# is $dom.find('p > svg > circle').size, 2, 'two circles';
+# is $dom.find('p > svg > circle').elems, 2, 'two circles';
 # is "$dom", '<p><svg><circle></circle><circle></circle></svg></p>',
 #   'right result';
 #
