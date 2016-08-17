@@ -16,8 +16,8 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
   </dd>
 </dl>
 EOF
-is $dom.find('dl > dd > dl > dt').[0].text, 'B', 'right text';
-is $dom.find('dl > dd > dl > dd').[0].text, 'C', 'right text';
+is $dom.find('dl > dd > dl > dt').[0].text(:trim), 'B', 'right text';
+is $dom.find('dl > dd > dl > dd').[0].text(:trim), 'C', 'right text';
 is $dom.find('dl > dt').[0].text,           'A', 'right text';
 
 done-testing;

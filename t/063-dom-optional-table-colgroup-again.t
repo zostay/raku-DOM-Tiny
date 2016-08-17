@@ -24,6 +24,6 @@ is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
   'right attribute';
 is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
   'right attribute';
-is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
+is $dom.at('table > tbody > tr > td').text(:trim), 'B', 'right text';
 
 done-testing;

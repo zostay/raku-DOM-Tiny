@@ -36,9 +36,9 @@ is $dom.find('table > colgroup > col').[1].attr<class>, 'foo',
 is $dom.find('table > colgroup > col').[2].attr<id>, 'bar',
   'right attribute';
 is $dom.at('table > thead > tr > th').text, 'A', 'right text';
-is $dom.find('table > thead > tr > th').[1].text, 'D', 'right text';
-is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
-is $dom.find('table > tbody > tr > td').map({ .text }).join("\n"), "B\nE",
+is $dom.find('table > thead > tr > th').[1].text(:trim), 'D', 'right text';
+is $dom.at('table > tbody > tr > td').text(:trim), 'B', 'right text';
+is $dom.find('table > tbody > tr > td').map({ .text(:trim) }).join("\n"), "B\nE",
   'right text';
 
 done-testing;

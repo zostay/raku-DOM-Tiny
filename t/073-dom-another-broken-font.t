@@ -21,7 +21,7 @@ EOF
 is $dom.at('html > head > title').text, 'Test', 'right text';
 is $dom.find('html > body > font > table > tr > td').[0].text, 'test1',
   'right text';
-is $dom.find('html > body > font > table > tr > td').[1].text, 'test2',
+is $dom.find('html > body > font > table > tr > td').[1].text(:trim), 'test2',
   'right text';
 
 done-testing;

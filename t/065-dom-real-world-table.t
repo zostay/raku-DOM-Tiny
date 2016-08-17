@@ -32,18 +32,18 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
     </table>
 EOF
 is $dom.find('html > head > title').[0].text, 'Real World!', 'right text';
-is $dom.find('html > body > p').[0].text,     'Just a test', 'right text';
-is $dom.find('p').[0].text,                   'Just a test', 'right text';
-is $dom.find('thead > tr > .three').[0].text, 'Three',       'right text';
-is $dom.find('thead > tr > .four').[0].text,  'Four',        'right text';
-is $dom.find('tbody > tr > .beta').[0].text,  'Beta',        'right text';
-is $dom.find('tbody > tr > .gamma').[0].text, '',            'no text';
+is $dom.find('html > body > p').[0].text(:trim),     'Just a test', 'right text';
+is $dom.find('p').[0].text(:trim),                   'Just a test', 'right text';
+is $dom.find('thead > tr > .three').[0].text(:trim), 'Three',       'right text';
+is $dom.find('thead > tr > .four').[0].text(:trim),  'Four',        'right text';
+is $dom.find('tbody > tr > .beta').[0].text(:trim),  'Beta',        'right text';
+is $dom.find('tbody > tr > .gamma').[0].text(:trim), '',            'no text';
 is $dom.find('tbody > tr > .gamma > a').[0].text, 'Gamma',     'right text';
-is $dom.find('tbody > tr > .alpha').[1].text,     'Alpha Two', 'right text';
+is $dom.find('tbody > tr > .alpha').[1].text(:trim),     'Alpha Two', 'right text';
 is $dom.find('tbody > tr > .gamma > a').[1].text, 'Gamma Two', 'right text';
 my @following
   = $dom.find('tr > td:nth-child(1)').map({ .following(':nth-child(even)') })
-  .flat.map({ .all-text });
+  .flat.map({ .all-text(:trim) });
 is-deeply @following, ['Beta', 'Delta', 'Beta Two', 'Delta Two'],
   'right results';
 

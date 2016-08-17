@@ -17,9 +17,9 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
       <td>D
 </table>
 EOF
-is $dom.find('table > tr > td').[0].text, 'A', 'right text';
+is $dom.find('table > tr > td').[0].text(:trim), 'A', 'right text';
 is $dom.find('table > tr > td').[1].text, 'B', 'right text';
-is $dom.find('table > tr > td').[2].text, 'C', 'right text';
-is $dom.find('table > tr > td').[3].text, 'D', 'right text';
+is $dom.find('table > tr > td').[2].text(:trim), 'C', 'right text';
+is $dom.find('table > tr > td').[3].text(:trim), 'D', 'right text';
 
 done-testing;

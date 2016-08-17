@@ -42,7 +42,7 @@ is $dom.find('entry').[1].at('displayName').text, 'Marge Simpson',
 is $dom.find('entry').[1].at('id').text, '1286822', 'right text';
 is $dom.find('entry').[1].at('addresses').children('type').[0].text,
   'home', 'right text';
-is $dom.find('entry').[1].at('addresses formatted').text,
+is $dom.find('entry').[1].at('addresses formatted').text(:trim),
   '742 Evergreen Terrace Springfield, VT 12345 USA', 'right text';
 is $dom.find('entry').[1].at('addresses formatted').text(:!trim),
   "742 Evergreen Terrace\nSpringfield, VT 12345 USA", 'right text';

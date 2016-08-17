@@ -13,6 +13,6 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
 EOF
 say "$dom";
 is $dom.at('html > head > title').text, 'foo', 'right text';
-is $dom.at('html > body').text,         'bar', 'right text';
+is $dom.at('html > body').text(:trim),         'bar', 'right text';
 
 done-testing;

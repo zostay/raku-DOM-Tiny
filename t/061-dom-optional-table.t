@@ -20,8 +20,8 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
 </table>
 EOF
 is $dom.at('table > thead > tr > th').text, 'A', 'right text';
-is $dom.find('table > thead > tr > th').[1].text, 'D', 'right text';
-is $dom.at('table > tbody > tr > td').text, 'B', 'right text';
-is $dom.at('table > tfoot > tr > td').text, 'C', 'right text';
+is $dom.find('table > thead > tr > th').[1].text(:trim), 'D', 'right text';
+is $dom.at('table > tbody > tr > td').text(:trim), 'B', 'right text';
+is $dom.at('table > tfoot > tr > td').text(:trim), 'C', 'right text';
 
 done-testing;

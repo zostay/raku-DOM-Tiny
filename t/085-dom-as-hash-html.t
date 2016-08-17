@@ -17,7 +17,7 @@ EOF
 ok !$dom.xml, 'XML mode not active';
 is $dom.at('a')<id>, 'one', 'right attribute';
 is-deeply [$dom.at('a').attr.keys.sort], ['id'], 'right attributes';
-is $dom.at('a').at('b').text, 'foo', 'right text';
+is $dom.at('a').at('b').text(:trim), 'foo', 'right text';
 is $dom.at('b')<class>, 'two', 'right attribute';
 is-deeply [$dom.at('a b').attr.keys.sort], <class test>.Array, 'right attributes';
 is $dom.find('a b c').[0].text, 'bar', 'right text';

@@ -16,10 +16,10 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
 </dl>
 EOF
 is $dom.find('dl > dt').[0].text, 'A', 'right text';
-is $dom.find('dl > dd').[0].text, 'B', 'right text';
+is $dom.find('dl > dd').[0].text(:trim), 'B', 'right text';
 is $dom.find('dl > dt').[1].text, 'C', 'right text';
-is $dom.find('dl > dd').[1].text, 'D', 'right text';
-is $dom.find('dl > dt').[2].text, 'E', 'right text';
-is $dom.find('dl > dd').[2].text, 'F', 'right text';
+is $dom.find('dl > dd').[1].text(:trim), 'D', 'right text';
+is $dom.find('dl > dt').[2].text(:trim), 'E', 'right text';
+is $dom.find('dl > dd').[2].text(:trim), 'F', 'right text';
 
 done-testing;

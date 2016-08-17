@@ -22,7 +22,7 @@ is $dom.tree.children[4].doctype, 'root [
   <!ELEMENT root (#PCDATA)>
   <!ATTLIST root att CDATA #REQUIRED>
 ]', 'right doctype';
-is $dom.at('root').text, '<hello>world</hello>', 'right text';
+is $dom.at('root').text(:trim), '<hello>world</hello>', 'right text';
 $dom = DOM::Tiny.parse(q:to/EOF/);
 <!doctype book
 SYSTEM "usr.dtd"
@@ -56,7 +56,7 @@ is $dom.tree.children[2].doctype, 'foo [
   %myentities;
 ]  ', 'right doctype';
 is $dom.at('foo').attr.{'xml:lang'}, 'de', 'right attribute';
-is $dom.at('foo').text, 'Check!', 'right text';
+is $dom.at('foo').text(:trim), 'Check!', 'right text';
 $dom = DOM::Tiny.parse(q:to/EOF/);
 <!DOCTYPE TESTSUITE PUBLIC "my.dtd" 'mhhh' [
   <!ELEMENT foo ANY>

@@ -14,9 +14,9 @@ my $dom = DOM::Tiny.parse(q:to/EOF/);
   </bar>
 </foo>
 EOF
-is $dom.at('foo bar baz').text,    'First',      'right text';
+is $dom.at('foo bar baz').text(:trim),    'First',      'right text';
 is $dom.at('baz').namespace,       'uri:first',  'right namespace';
-is $dom.at('foo bar ya\.da').text, 'Second',     'right text';
+is $dom.at('foo bar ya\.da').text(:trim), 'Second',     'right text';
 is $dom.at('ya\.da').namespace,    'uri:second', 'right namespace';
 is $dom.at('foo').namespace,       Str,        'no namespace';
 is $dom.at('[xml\.s]'), Nil, 'no result';

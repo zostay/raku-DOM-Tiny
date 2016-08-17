@@ -43,7 +43,7 @@ is "$dom", q:to/EOF/, 'right result';
 </a></foo>
 EOF
 my $simple = $dom.at('foo simple.working[class^="wor"]');
-is $simple.parent.all-text,
+is $simple.parent.all-text(:trim),
   'test easy works well yada yada < very broken more text', 'right text';
 is $simple.tag, 'simple', 'right tag';
 is $simple.attr('class'), 'working', 'right class attribute';

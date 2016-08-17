@@ -396,7 +396,7 @@ multi to-json(DOM::Tiny:D $dom) is export {
     DOM::Tiny::HTML::_render($dom.tree, :$xml)
 }
 
-method all-text(DOM::Tiny:D: Bool :$trim = True) {
+method all-text(DOM::Tiny:D: Bool :$trim = False) {
     $!tree.text(:recurse, :$trim);
 }
 
@@ -640,7 +640,7 @@ multi method tag(DOM::Tiny:D: Str:D $tag) returns DOM::Tiny:D {
     self;
 }
 
-method text(DOM::Tiny:D: Bool :$trim = True, Bool :$recurse = False) {
+method text(DOM::Tiny:D: Bool :$trim = False, Bool :$recurse = False) {
     $!tree.text(:$trim, :$recurse);
 }
 method render(DOM::Tiny:D:) {
