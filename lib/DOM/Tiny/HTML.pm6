@@ -54,7 +54,18 @@ grammar XMLTokenizer {
 
 grammar HTMLTokenizer is XMLTokenizer {
     token tag-name {
-        <!before <.raw-tag> > <-[ < > \s / ]>+
+        <!before <.raw-tag> | <.rcdata-tag> > <-[ < > \s / ]>+
+    }
+
+    token markup:sym<rcdata> { :i
+        '<' <.ws> $<start> = <rcdata-tag> <.ws>
+        [ <attr> <.ws> ]* <.ws> '>'
+        { $ = $<start> } # Why does this fix the regex?
+        $<rcdata-text> = [ .*? ]
+        [
+            | '<' <.ws> '/' <.ws> "$<start>" <.ws> '>'
+            | $
+        ]
     }
 
     token markup:sym<raw> { :i
@@ -68,6 +79,7 @@ grammar HTMLTokenizer is XMLTokenizer {
         ]
     }
 
+    token rcdata-tag { :i [ title | textarea ] }
     token raw-tag { :i [ script | style ] }
 
     token ml-token { <markup> || <runaway-lt> }
@@ -332,8 +344,10 @@ class Raw is export is DocumentNode does TextNode {
 class Tag is export is DocumentNode does HasChildren {
     has Str $.tag is rw is required;
     has %.attr is rw;
+    has Bool $.rcdata is rw = False;
 
     method trimmable(Tag:D:) returns Bool {
+        return False if $.rcdata;
         return False if $!tag eq 'pre';
         callsame();
     }
@@ -370,7 +384,10 @@ class Tag is export is DocumentNode does HasChildren {
 }
 
 class Text is export is DocumentNode does TextNode {
-    method render(:$xml) { html-escape $!text; }
+    method render(:$xml) {
+        $.parent ~~ Tag
+            && $.parent.rcdata ?? $!text !! html-escape $!text;
+    }
 }
 
 class Root is export is Node does HasChildren {
@@ -439,8 +456,22 @@ class TreeMaker {
             given %markup<type> {
                 when Tag {
 
+                    if %markup<rcdata> {
+                        my $start = %markup<tag>;
+                        my %attr  = %markup<attr>;
+                        my $text  = %markup<rcdata>;
+
+                        _start($start, %attr, $xml, $current);
+                        $current.rcdata = True;
+                        $current.children = Text.new(
+                            text   => html-unescape($text),
+                            parent => $current,
+                        );
+                        _end($start, $xml, $current);
+                    }
+
                     # End
-                    if %markup<end> {
+                    elsif %markup<end> {
                         _end(%markup<tag>, $xml, $current);
                     }
 
@@ -543,9 +574,18 @@ class TreeMaker {
     method markup:sym<raw>($/) {
         make {
             type  => Raw,
-            tag   => $.xml ?? ~$<start> !! (~$<start>).lc,
+            tag   => (~$<start>).lc,
             attr  => Hash.new($<attr>».made.grep(*.defined)),
             raw   => ~$<raw-text>,
+        };
+    }
+
+    method markup:sym<rcdata>($/) {
+        make {
+            type   => Tag,
+            tag    => (~$<start>).lc,
+            attr   => Hash.new($<attr>».made.grep(*.defined)),
+            rcdata => ~$<rcdata-text>,
         };
     }
 
