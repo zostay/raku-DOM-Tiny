@@ -319,13 +319,47 @@ An E element whose attributes match all following attribute selectors.
 
     my $links = $dom.find('a[foo^=b][foo$=ar]');
 
+=head1 OPERATORS AND COERCIONS
+
+You can use array subscripts and hash subscripts with DOM::Tiny. Using this class as an array or hash, though, is not recommended as several of the standard methods for these do not work as expected.
+
+=head2 Array
+
+You may use array subscripts as a shortcut for calling C<children>:
+
+    my $third-child = $dom[2];
+
+=head2 Hash
+
+You may use hash subscripts as a shortcut for calling C<attr>:
+
+    my $id = $dom<id>;
+
+=head2 Str
+
+If you convert the DOM::Tiny object to a string using C<Str>, C<~>, or putting it in a string, it will render the markup.
+
+    my $html = "$dom";
+
+=head1 METHODS
+
+=head2 new
+
+    method new(DOM::Tiny:U: Bool :$xml) returns DOM::Tiny:D
+
+Constructs a DOM::Tiny object with an empty DOM tree. Setting the optional C<$xml> flag guarantees XML mode. Setting it to a false guarantees HTML mode. If it is unset, DOM::Tiny will select a mode based upon the parsed text, defaulting to HTML.
+
+=head2 parse
+
+    method parse(DOM::Tiny:U: Str $ml, Bool :$xml) returns DOM::Tiny:D
+    method parse(DOM::Tiny:D: Str $ml, Bool :$xml) returns DOM::Tiny:D
+
+Parses the given string, C<$ml>, as HTML or XML based upon the C<$xml> flag or autodetection if the flag is not given. If called on an existing DOM::Tiny object, the newly parsed tree will replace the previous tree.
+
 =end pod
 
 has Node $.tree = Root.new;
 has Bool $.xml = False;
-
-multi method Bool(DOM::Tiny:U:) returns Bool:D { False }
-multi method Bool(DOM::Tiny:D:) returns Bool:D { True }
 
 method AT-POS(DOM::Tiny:D: Int:D $i) is rw returns DOM::Tiny {
     return-rw self.child-nodes[$i]
