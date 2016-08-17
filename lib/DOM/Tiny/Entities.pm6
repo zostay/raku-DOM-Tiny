@@ -24,42 +24,33 @@ multi html-escape(Str:D $str) returns Str is export {
 multi html-escape(Any:U) returns Str is export { Str }
 
 multi html-unescape(Str:D $str) returns Str is export {
-    $str.subst(/
-        '&' [ '#'
-                # decimal entity
-                $<dec> = [ <[ 0..9 ]> ** 1..7 ]
-                # hexidecimal entity
-                | 'x' $<hex> = [ <[ 0..9 a..f A..F ]> ** 1..6 ] ';'
-            # word entity
-            | $<name> = [ \w+ ';'? ] ]
-    /, &_decode, :g);
+    $str.subst(/ '&#x' $<hex> = [ <[ 0..9 a..f A..F ]> ** 1..6 ] ';' /, &_decode_hex, :g)\
+        .subst(/ '&#'  $<dec> = [ <[ 0..9 ]> ** 1..7 ] ';' /,           &_decode_dec, :g)\
+        .subst(/ '&'  $<name> = [ \w+ ';'? ] /,                         &_decode_name, :g);
 }
 
 multi html-unescape(Any:U) returns Str is export { Str }
 
-my sub _decode($/) {
+my sub _decode_name($/) {
+    my $name = ~$/<name>;
 
-    with $/<name> {
-        my $name = ~$/<name>;
-
-        my $rest = '';
-        while $name.chars {
-            return %ENTITIES{$name} ~ $rest.flip
-                if %ENTITIES{$name} :exists;
-            $rest ~= $name.substr(*-1);
-            $name .= substr(0, *-1);
-        }
-
-        '&' ~ $rest.flip;
+    my $rest = '';
+    while $name.chars {
+        return %ENTITIES{$name} ~ $rest.flip
+            if %ENTITIES{$name} :exists;
+        $rest ~= $name.substr(*-1);
+        $name .= substr(0, *-1);
     }
 
-    # Code point
-    orwith $/<hex> {
-        :16((~$/<hex>).substr(1)).chr;
-    }
-    else {
-        (~$/<dec>).chr;
-    }
+    '&' ~ $rest.flip;
+}
+
+my sub _decode_hex($/) {
+    :16(~$/<hex>).chr;
+}
+
+my sub _decode_dec($/) {
+    (~$/<dec>).chr;
 }
 
 BEGIN $ENTITY_DATA = q:to/END_ENTITY_DATA/;
