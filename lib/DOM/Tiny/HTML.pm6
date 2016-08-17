@@ -10,7 +10,7 @@ grammar XMLTokenizer {
 
     proto token markup { * }
     token markup:sym<doctype> { :i '<!DOCTYPE' <.ws> <doctype> <.ws> '>' }
-    token markup:sym<comment> { '<!--' $<comment> = [ .*? ] '-->' }
+    token markup:sym<comment> { '<!--' $<comment> = [ .*? ] '--' <.ws> '>' }
     token markup:sym<cdata> { '<![CDATA[' $<cdata> = [ .*? ] ']]>' }
     token markup:sym<pi> { '<?' $<pi> = [ .*? ] '?>' }
     token markup:sym<tag> {

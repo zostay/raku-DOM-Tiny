@@ -4,23 +4,6 @@ use v6;
 use Test;
 use DOM::Tiny;
 
-# # "textarea"
-# my $dom = DOM::Tiny.parse('<textarea id="a"> <p>test&lt;</textarea>');
-# is $dom.at('textarea#a').text, ' <p>test<', 'right text';
-# is "$dom", '<textarea id="a"> <p>test<</textarea>', 'right result';
-#
-# # Comments
-# my $dom = DOM::Tiny.parse(q:to/EOF/);
-# <!-- HTML5 -->
-# <!-- bad idea -- HTML5 -->
-# <!-- HTML4 -- >
-# <!-- bad idea -- HTML4 -- >
-# EOF
-# is $dom.tree.[1][1], ' HTML5 ',             'right comment';
-# is $dom.tree.[3][1], ' bad idea -- HTML5 ', 'right comment';
-# is $dom.tree.[5][1], ' HTML4 ',             'right comment';
-# is $dom.tree.[7][1], ' bad idea -- HTML4 ', 'right comment';
-#
 # SKIP: {
 #   skip 'Regex subexpression recursion causes SIGSEGV on 5.8', 1 unless $] >= 5.010000;
 #   # Huge number of attributes
