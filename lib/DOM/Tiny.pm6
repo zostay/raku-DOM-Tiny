@@ -10,6 +10,317 @@ my package EXPORT::DEFAULT {
     }
 }
 
+=begin pod
+
+=NAME DOM::Tiny - A lightweight, self-contained DOM parser/manipulator
+
+=begin SYNOPSIS
+
+    use DOM::Tiny;
+
+    # Parse
+    my $dom = DOM::Tiny.parse('<div><p id="a">Test</p><p id="b">123</p></div>');
+
+    # Find
+    say $dom.at('#b').text;
+    say $dom.find('p').map(*.text).join("\n");
+    say $dom.find('[id]').map(*.attr('id')).join("\n");
+
+    # Iterate
+    $dom.find('p[id]').reverse.map({ .<id>.say });
+
+    # Loop
+    for $dom.find('p[id]') -> $e {
+        say $e<id>, ':', $e.text;
+    }
+
+    # Modify
+    $dom.find('div p')[*-1].append('<p id="c">456</p>');
+    $dom.find(':not(p)').map(*.strip);
+
+    # Render
+    say "$dom";
+
+=end SYNOPSIS
+
+=begin DESCRIPTION
+
+DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser. It might support
+some standards as some point, but the implementation is still getting started,
+so no promises. It is relatively robust owing mostly to the enormous test suite
+inherited from its progenitor. The HTML/XML parsing is very forgiving and the
+CSS parser supports a reasonable subset of CSS3 for selecting elements in the
+DOM tree.
+
+This module started as a port of Mojo::DOM58 from Perl 5, but maintaining
+compatibility with that library is not a major aim of this project. In fact,
+features of Perl 6 render certain aspects of Mojo::DOM58 completely redundant.
+For example, the collection system that provides custom features such as C<map>,
+C<each>, C<reduce>, etc. are completely unnecessary in Perl 6 as built-in syntax
+is as simple or simpler to use and safer.
+
+=end DESCRIPTION
+
+=head1 NODES AND ELEMENTS
+
+When we parse an HTML/XML fragment, it gets turned into a tree of nodes.
+
+    <!DOCTYPE html>
+    <html>
+    <head><title>Hello</title></head>
+    <body>World!</body>
+    </html>
+
+There are currently the following different kinds of nodes: Root, Text, Tag, Raw, PI, Doctype, Comment, and CDATA. These can also be grouped into the following roles: DocumentNode (anything but Root), Node (all kinds), HasChildren (Root and Tag), and TextNode (includes Text, CDATA, and Raw).
+
+    Root
+    |- Doctype (html)
+    +- Tag (html)
+       |- Tag (head)
+       |  +- Tag (title)
+       |     +- Text (Hello)
+       +- Tag (body)
+          +- Text (World!)
+
+While all node types are represented as DOM::Tiny objects, some methods like C<attr> and C<namespace> only apply to elements.
+
+=head1 CASE SENSITIVITY
+
+DOM::Tiny defaults to HTML semantics, that means all tags and attribute names are lowercased and selectors need to be lowercase as well.
+
+    # HTML semantics
+    my $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>');
+    say $dom.at('p[id]').text;
+
+If an XML declaration is found at the start of the snippet to parse, the parser will automatically switch into XML mode and everything becomes case-sensitive.
+
+    # XML semantics
+    my $dom = DOM::Tiny.parse('<?xml version="1.0"?><P ID="greeting">Hi!</P>');
+    say $dom.at('P[ID]').text;
+
+XML detection can also be disabled by setting the C<:xml> flag.
+
+    # Force XML semantics
+    my $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>', :xml);
+    say $dom.at('P[ID]').text;
+
+    # Force HTML semantics
+    $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>', :!xml);
+    say $dom.at('p[id]').text;
+
+=head1 SELECTORS
+
+DOM::Tiny uses a CSS selector engine found in L<DOM::Tiny::CSS>. All CSS selectors that make sense for a standalone parser are supported.
+
+=head2 *
+
+Any element.
+
+    my $all = $dom.find('*');
+
+=head2 E
+
+An element of type E.
+
+    my $title = $dom.at('title');
+
+=head2 E[foo]
+
+An E element with a foo attribute.
+
+    my $links = $dom.find('a[href]');
+
+=head2 E[foo="bar"]
+
+An E element whose foo attribute value is exactly equal to bar.
+
+    my $case_sensitive = $dom.find('input[type="hidden"]');
+    my $case_sensitive = $dom.find('input[type=hidden]');
+
+=head2 E[foo="bar" i]
+
+An E element whose foo attribute value is exactly equal to any case-permutation of bar.
+
+    my $case_insensitive = $dom.find('input[type="hidden" i]');
+    my $case_insensitive = $dom.find('input[type=hidden i]');
+    my $case_insensitive = $dom.find('input[class~="foo" i]');
+
+This selector is part of Selectors Level 4, which is still a work in progress.
+
+=head2 E[foo~="bar"]
+
+An E element whose foo attribute value is a list of whitespace-separated values, one of which is exactly equal to bar.
+
+    my $foo = $dom.find('input[class~="foo"]');
+    my $foo = $dom.find('input[class~=foo]');
+
+=head2 E[foo^="bar"]
+
+An E element whose foo attribute value begins exactly with the string bar.
+
+    my $begins_with = $dom.find('input[name^="f"]');
+    my $begins_with = $dom.find('input[name^=f]');
+
+=head2 E[foo$="bar"]
+
+An E element whose foo attribute value ends exactly with the string bar.
+
+    my $ends_with = $dom.find('input[name$="o"]');
+    my $ends_with = $dom.find('input[name$=o]');
+
+=head2 E[foo*="bar"]
+
+An E element whose foo attribute value contains the substring bar.
+
+    my $contains = $dom.find('input[name*="fo"]');
+    my $contains = $dom.find('input[name*=fo]');
+
+=head2 E:root
+
+An E element, root of the document.
+
+    my $root = $dom.at(':root');
+
+=head2 E:nth-child(n)
+
+An E element, the n-th child of its parent.
+
+    my $third = $dom.find('div:nth-child(3)');
+    my $odd   = $dom.find('div:nth-child(odd)');
+    my $even  = $dom.find('div:nth-child(even)');
+    my $top3  = $dom.find('div:nth-child(-n+3)');
+
+=head2 E:nth-last-child(n)
+
+An E element, the n-th child of its parent, counting from the last one.
+
+    my $third    = $dom.find('div:nth-last-child(3)');
+    my $odd      = $dom.find('div:nth-last-child(odd)');
+    my $even     = $dom.find('div:nth-last-child(even)');
+    my $bottom3  = $dom.find('div:nth-last-child(-n+3)');
+
+=head2 E:nth-of-type(n)
+
+An E element, the n-th sibling of its type.
+
+    my $third = $dom.find('div:nth-of-type(3)');
+    my $odd   = $dom.find('div:nth-of-type(odd)');
+    my $even  = $dom.find('div:nth-of-type(even)');
+    my $top3  = $dom.find('div:nth-of-type(-n+3)');
+
+=head2 E:nth-last-of-type(n)
+
+An E element, the n-th sibling of its type, counting from the last one.
+
+    my $third    = $dom.find('div:nth-last-of-type(3)');
+    my $odd      = $dom.find('div:nth-last-of-type(odd)');
+    my $even     = $dom.find('div:nth-last-of-type(even)');
+    my $bottom3  = $dom.find('div:nth-last-of-type(-n+3)');
+
+=head2 E:first-child
+
+An E element, first child of its parent.
+
+    my $first = $dom.find('div p:first-child');
+
+=head2 E:last-child
+
+An E element, last child of its parent.
+
+    my $last = $dom.find('div p:last-child');
+
+=head2 E:first-of-type
+
+An E element, first sibling of its type.
+
+    my $first = $dom.find('div p:first-of-type');
+
+=head2 E:last-of-type
+
+An E element, last sibling of its type.
+
+    my $last = $dom.find('div p:last-of-type');
+
+=head2 E:only-child
+
+An E element, only child of its parent.
+
+    my $lonely = $dom.find('div p:only-child');
+
+=head2 E:only-of-type
+
+An E element, only sibling of its type.
+
+    my $lonely = $dom.find('div p:only-of-type');
+
+=head2 E:empty
+
+An E element that has no children (including text nodes).
+
+    my $empty = $dom.find(':empty');
+
+=head2 E:checked
+
+A user interface element E which is checked (for instance a radio-button or checkbox).
+
+    my $input = $dom.find(':checked');
+
+=head2 E.warning
+
+An E element whose class is "warning".
+
+    my $warning = $dom.find('div.warning');
+
+=head2 E#myid
+
+An E element with ID equal to "myid".
+
+    my $foo = $dom.at('div#foo');
+
+=head2 E:not(s)
+
+An E element that does not match simple selector s.
+
+    my $others = $dom.find('div p:not(:first-child)');
+
+=head2 E F
+
+An F element descendant of an E element.
+
+    my $headlines = $dom.find('div h1');
+
+=head2 E > F
+
+An F element child of an E element.
+
+    my $headlines = $dom.find('html > body > div > h1');
+
+=head2 E + F
+
+An F element immediately preceded by an E element.
+
+    my $second = $dom.find('h1 + h2');
+
+=head2 E ~ F
+
+An F element preceded by an E element.
+
+    my $second = $dom.find('h1 ~ h2');
+
+=head2 E, F, G
+
+Elements of type E, F and G.
+
+    my $headlines = $dom.find('h1, h2, h3');
+
+=head2 E[foo=bar][bar=baz]
+
+An E element whose attributes match all following attribute selectors.
+
+    my $links = $dom.find('a[foo^=b][foo$=ar]');
+
+=end pod
+
 has Node $.tree = Root.new;
 has Bool $.xml = False;
 
