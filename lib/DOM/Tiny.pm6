@@ -321,7 +321,9 @@ An E element whose attributes match all following attribute selectors.
 
 =head1 OPERATORS AND COERCIONS
 
-You can use array subscripts and hash subscripts with DOM::Tiny. Using this class as an array or hash, though, is not recommended as several of the standard methods for these do not work as expected.
+You can use array subscripts and hash subscripts with DOM::Tiny. Using this
+class as an array or hash, though, is not recommended as several of the standard
+methods for these do not work as expected.
 
 =head2 Array
 
@@ -337,7 +339,8 @@ You may use hash subscripts as a shortcut for calling C<attr>:
 
 =head2 Str
 
-If you convert the DOM::Tiny object to a string using C<Str>, C<~>, or putting it in a string, it will render the markup.
+If you convert the DOM::Tiny object to a string using C<Str>, C<~>, or putting
+it in a string, it will render the markup.
 
     my $html = "$dom";
 
@@ -347,30 +350,130 @@ If you convert the DOM::Tiny object to a string using C<Str>, C<~>, or putting i
 
     method new(DOM::Tiny:U: Bool :$xml) returns DOM::Tiny:D
 
-Constructs a DOM::Tiny object with an empty DOM tree. Setting the optional C<$xml> flag guarantees XML mode. Setting it to a false guarantees HTML mode. If it is unset, DOM::Tiny will select a mode based upon the parsed text, defaulting to HTML.
+Constructs a DOM::Tiny object with an empty DOM tree. Setting the optional
+C<$xml> flag guarantees XML mode. Setting it to a false guarantees HTML mode. If
+it is unset, DOM::Tiny will select a mode based upon the parsed text, defaulting
+to HTML.
 
 =head2 parse
 
     method parse(DOM::Tiny:U: Str $ml, Bool :$xml) returns DOM::Tiny:D
     method parse(DOM::Tiny:D: Str $ml, Bool :$xml) returns DOM::Tiny:D
 
-Parses the given string, C<$ml>, as HTML or XML based upon the C<$xml> flag or autodetection if the flag is not given. If called on an existing DOM::Tiny object, the newly parsed tree will replace the previous tree.
+Parses the given string, C<$ml>, as HTML or XML based upon the C<$xml> flag or
+autodetection if the flag is not given. If called on an existing DOM::Tiny
+object, the newly parsed tree will replace the previous tree.
+
+=head2 postcircumfix:<{}>
+
+    method postcircumfix:<{}>(DOM::Tiny:D: Str:D $k) is rw
+
+You may use the C<.{}> operator as a shortcut for calling the C<attr>
+method and getting attributes on a tag. You may also use the C<:exists> and
+C<:delete> adverbs.
+
+=head2 hash
+
+    method hash(DOM::Tiny:D:) returns Hash
+
+This is a synonym for C<attr>, when it is called with no arguments.
+
+=head2 postcircumfix:<[]>
+
+    method postcircumfix:<[]>(DOM::Tiny:D: Int:D $i) is rw
+
+The C<.[]> can be used in place of C<child-nodes> to retrieve children of the
+current root or tag from the DOM. The C<:exists> and C<:delete> adverbs also
+work.
+
+=head2 list
+
+    method list(DOM::Tiny:D:) returns List
+
+This is a synonym for C<child-nodes>.
+
+=head2 all-text
+
+    method all-text(DOM::Tiny:D: Bool :$trim = False) returns Str
+
+Pulls the text from all nodes under the current item in the DOM tree and returns
+it as a string.  This is identical to calling C<text> with the C<:recurse> flag
+set to C<True>.  The C<:trim> flag may be set to true, which will cause all
+trimmable space to be clipped from the returned text (i.e., text not in an
+RCDATA tag like C<title> or C<textarea> and not in a C<pre> tag).
+
+=head2 ancestors
+
+    method ancestors(DOM::Tiny:D: Str $selector?) returns Seq
+
+Returns a sequence of ancestors to the current object as C<DOM::Tiny> objects.
+This will return an empty sequence for the root or any node that no longer
+has a parent (such as may be the case for a recently removed node).
+
+=head2 append
+
+    method append(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+Appends the given markup content immediately after the current node. The C<:xml>
+flag may be set to determine whether the given markup should be parsed as XML or
+HTML (with the default being whatever the current document is being treated as).
+
+If the current node is the root (i.e., C<$dom.type ~~ Root>), this
+operation is a no-op. It will silently do nothing.
+
+Returns the current node.
+
+=head2 append-content
+
+    method append-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+If this is the root or a tag (i.e., C<$dom.type ~~ Root|Tag>), the given markup
+will be parsed and appended to the end of the root's or tag's children. If this
+is a text node (i.e., C<$dom.type ~~ TextNode>), then the markup will be
+appended to the text node parent's children. Otherwise this is a no-op and will
+silently do nothing.
+
+The C<:xml> flag may be used to specify the format for the markup being parsed,
+defaulting to the setting for the current document.
+
+Returns the node whose children have been modified.
 
 =end pod
 
 has Node $.tree = Root.new;
 has Bool $.xml = False;
 
+method DELETE-POS(DOM::Tiny:D: Int:D $i) returns DOM::Tiny {
+    return Nil unless $!tree ~~ HasChildren;
+    my $tree = $!tree.children[0]:delete;
+    return Nil without $tree;
+    $tree.parent = Nil;
+    DOM::Tiny.new(:$tree, :$!xml);
+}
+
+method EXISTS-POS(DOM::Tiny:D: Int:D $i) returns Bool:D {
+    return False unless $!tree ~~ HasChildren;
+    $!tree.children[0]:exists
+}
+
 method AT-POS(DOM::Tiny:D: Int:D $i) is rw returns DOM::Tiny {
+    return Nil unless $!tree ~~ HasChildren;
     return-rw self.child-nodes[$i]
 }
 method list(DOM::Tiny:D:) { self.child-nodes }
 
-method EXISTS-KEY(DOM::Tiny:D: Str:D $k) {
+method DELETE-KEY(DOM::Tiny:D: Str:D $k) {
+    return Nil unless $!tree ~~ Tag;
+    $!tree.attr{$k}:delete
+}
+
+method EXISTS-KEY(DOM::Tiny:D: Str:D $k) returns Bool:D {
+    return False unless $!tree ~~ Tag;
     $!tree.attr{$k}:exists
 }
 
 method AT-KEY(DOM::Tiny:D: Str:D $k) is rw {
+    return Nil unless $!tree ~~ Tag;
     my $tree = self;
     Proxy.new(
         FETCH => method ()   { $tree.attr($k) },
