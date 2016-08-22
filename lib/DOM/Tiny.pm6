@@ -438,6 +438,81 @@ defaulting to the setting for the current document.
 
 Returns the node whose children have been modified.
 
+=head2 at
+
+    method at(DOM::Tiny:D: Str:D $selector) returns DOM::Tiny
+
+Given a CSS selector, this will return the first node matching that selector or Nil.
+
+=head2 attr
+
+    multi method attr(DOM::Tiny:D:) returns Hash:D
+    multi method attr(DOM::Tiny:D: Str:D $name) returns Str
+    multi method attr(DOM::Tiny:D: Str:D $name, Str $value) returns DOM::Tiny:D
+    multi method attr(DOM::Tiny:D: Str:D $name, Nil) returns DOM::Tiny:D
+    multi method attr(DOM::Tiny:D: *%values) returns DOM::Tiny:D
+
+The C<attr> multi-method provides a getter/setter for attributes on the current
+tag. If the current node is not a tag, this is basically a no-op and will
+silently do nothing.
+
+With no arguments, the method returns the attributes of the tag as a L<Hash>.
+
+With a single string argument, it returns the value of the named attribute or
+Nil.
+
+With two string arguments, it will set the value of the named attribute and
+return the current node.
+
+With a string argument and a C<Nil>, it will delete the attribute and return the
+current node.
+
+Given one or more named arguments, the named values will be set to the given
+values and the current node will be returned.
+
+=head2 child-nodes
+
+    method child-nodes(DOM::Tiny:D: Bool :$tags-only = False)
+
+If the current node has children (i.e., a tag or root), this method returns all
+of the children. If the C<:tags-only> flag is set, it returns only the children
+that are tags.
+
+If the current node has no children or is not able to have children, an empty
+list will be returned.
+
+=head2 children
+
+    method children(DOM::Tiny:D: Str $selector?)
+
+If the current node has children, this method returns only the tags that are
+children of the current node. The C<$selector> may be set to a CSS selector to
+filter the children returned. Only those matching the selector will be returned.
+
+If the current node has no children or is not able to have children, an empty
+list will be returned.
+
+=head2 content
+
+    multi method content(DOM::Tiny:D:) returns Str:D
+    multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D
+    multi method content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+This multi-method works with the content of the node, something like
+C<innerHTML> in the standard DOM.
+
+Given no arguments, it returns the markup within the element rendered to a
+string. If the node is empty or has no markup, it will return an empty string.
+
+Given a DOM::Tiny, the tree within that object will replace the content of the
+current node. If the current node cannot have children, then this is a no-op and
+will silently do nothing. This returns the current node.
+
+Given a string, the string will be parsed into HTML or XML (based upon the value
+of the C<:xml> named argument, which defaults to the setting for the current
+node), and the generated node tree will be used to replace the content of the
+current node. The current node is returned.
+
 =end pod
 
 has Node $.tree = Root.new;
@@ -605,7 +680,7 @@ multi method content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) retur
     self;
 }
 
-multi method content(DOM::Tiny:D:) is rw returns Str:D { $!tree.content }
+multi method content(DOM::Tiny:D:) returns Str:D { $!tree.content }
 
 method descendant-nodes(DOM::Tiny:D:) {
     return () unless $!tree ~~ HasChildren;
