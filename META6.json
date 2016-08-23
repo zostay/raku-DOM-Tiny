@@ -1,15 +1,15 @@
 {
    "meta6" : "0",
    "provides" : {
-      "DOM::Tiny" : "lib/DOM/Tiny.pm"
-      "DOM::Tiny::CSS" : "lib/DOM/Tiny/CSS.pm"
+      "DOM::Tiny" : "lib/DOM/Tiny.pm",
+      "DOM::Tiny::CSS" : "lib/DOM/Tiny/CSS.pm",
       "DOM::Tiny::HTML" : "lib/DOM/Tiny/HTML.pm"
    },
    "test-depends" : [
       "Test"
    ],
    "support" : {
-      "source" : "git://github.com/zostay/p6-DOM-Tiny.git",
+      "source" : "git://github.com/zostay/p6-DOM-Tiny.git"
    },
    "perl" : "6.c",
    "build-depends" : [],
@@ -22,5 +22,5 @@
    ],
    "version" : "0.1",
    "license" : "Artistic",
-   "description" : "Very small, self-sufficient DOM parser manipulator",
+   "description" : "Very small, self-sufficient DOM parser manipulator"
 }
