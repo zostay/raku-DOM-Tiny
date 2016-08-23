@@ -346,7 +346,9 @@ it in a string, it will render the markup.
 
 =head1 METHODS
 
-=head2 new
+=head2 Construction, Parsing, and Rendering
+
+=head3 new
 
     method new(DOM::Tiny:U: Bool :$xml) returns DOM::Tiny:D
 
@@ -355,7 +357,7 @@ C<$xml> flag guarantees XML mode. Setting it to a false guarantees HTML mode. If
 it is unset, DOM::Tiny will select a mode based upon the parsed text, defaulting
 to HTML.
 
-=head2 parse
+=head3 parse
 
     method parse(DOM::Tiny:U: Str $ml, Bool :$xml) returns DOM::Tiny:D
     method parse(DOM::Tiny:D: Str $ml, Bool :$xml) returns DOM::Tiny:D
@@ -364,7 +366,47 @@ Parses the given string, C<$ml>, as HTML or XML based upon the C<$xml> flag or
 autodetection if the flag is not given. If called on an existing DOM::Tiny
 object, the newly parsed tree will replace the previous tree.
 
-=head2 postcircumfix:<{}>
+=head3 render
+
+    method render(DOM::Tiny:D:) returns Str:D
+
+This renders the current node and all its content back to a string and returns it. The format of the markup is determined by the current C<xml> setting.
+
+=head3 Str
+
+    method Str(DOM::Tiny:D:) returns Str:D
+
+This is a synonym for C<render>.
+
+=head3 xml
+
+    method xml(DOM::Tiny:D:) is rw returns Bool:D
+
+This is the boolean flag determining how the node was parsed and how it will be rendered.
+
+=head2 Finding and Filtering Nodes
+
+=head3 at
+
+    method at(DOM::Tiny:D: Str:D $selector) returns DOM::Tiny
+
+Given a CSS selector, this will return the first node matching that selector or Nil.
+
+=head3 find
+
+    method find(DOM::Tiny:D: Str:D $selector)
+
+Returns all nodes matching the given CSS C<$selector> within the current node.
+
+=head3 matches
+
+    method matches(DOM::Tiny:D: Str:D $selector) returns Bool:D
+
+Returns C<True> if the current node matches the given C<$selector> or C<False> otherwise.
+
+=head2 Tag Details
+
+=head3 postcircumfix:<{}>
 
     method postcircumfix:<{}>(DOM::Tiny:D: Str:D $k) is rw
 
@@ -372,27 +414,13 @@ You may use the C<.{}> operator as a shortcut for calling the C<attr>
 method and getting attributes on a tag. You may also use the C<:exists> and
 C<:delete> adverbs.
 
-=head2 hash
+=head3 hash
 
     method hash(DOM::Tiny:D:) returns Hash
 
 This is a synonym for C<attr>, when it is called with no arguments.
 
-=head2 postcircumfix:<[]>
-
-    method postcircumfix:<[]>(DOM::Tiny:D: Int:D $i) is rw
-
-The C<.[]> can be used in place of C<child-nodes> to retrieve children of the
-current root or tag from the DOM. The C<:exists> and C<:delete> adverbs also
-work.
-
-=head2 list
-
-    method list(DOM::Tiny:D:) returns List
-
-This is a synonym for C<child-nodes>.
-
-=head2 all-text
+=head3 all-text
 
     method all-text(DOM::Tiny:D: Bool :$trim = False) returns Str
 
@@ -402,49 +430,7 @@ set to C<True>.  The C<:trim> flag may be set to true, which will cause all
 trimmable space to be clipped from the returned text (i.e., text not in an
 RCDATA tag like C<title> or C<textarea> and not in a C<pre> tag).
 
-=head2 ancestors
-
-    method ancestors(DOM::Tiny:D: Str $selector?) returns Seq
-
-Returns a sequence of ancestors to the current object as C<DOM::Tiny> objects.
-This will return an empty sequence for the root or any node that no longer
-has a parent (such as may be the case for a recently removed node).
-
-=head2 append
-
-    method append(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
-
-Appends the given markup content immediately after the current node. The C<:xml>
-flag may be set to determine whether the given markup should be parsed as XML or
-HTML (with the default being whatever the current document is being treated as).
-
-If the current node is the root (i.e., C<$dom.type ~~ Root>), this
-operation is a no-op. It will silently do nothing.
-
-Returns the current node.
-
-=head2 append-content
-
-    method append-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
-
-If this is the root or a tag (i.e., C<$dom.type ~~ Root|Tag>), the given markup
-will be parsed and appended to the end of the root's or tag's children. If this
-is a text node (i.e., C<$dom.type ~~ TextNode>), then the markup will be
-appended to the text node parent's children. Otherwise this is a no-op and will
-silently do nothing.
-
-The C<:xml> flag may be used to specify the format for the markup being parsed,
-defaulting to the setting for the current document.
-
-Returns the node whose children have been modified.
-
-=head2 at
-
-    method at(DOM::Tiny:D: Str:D $selector) returns DOM::Tiny
-
-Given a CSS selector, this will return the first node matching that selector or Nil.
-
-=head2 attr
+=head3 attr
 
     multi method attr(DOM::Tiny:D:) returns Hash:D
     multi method attr(DOM::Tiny:D: Str:D $name) returns Str
@@ -470,29 +456,7 @@ current node.
 Given one or more named arguments, the named values will be set to the given
 values and the current node will be returned.
 
-=head2 child-nodes
-
-    method child-nodes(DOM::Tiny:D: Bool :$tags-only = False)
-
-If the current node has children (i.e., a tag or root), this method returns all
-of the children. If the C<:tags-only> flag is set, it returns only the children
-that are tags.
-
-If the current node has no children or is not able to have children, an empty
-list will be returned.
-
-=head2 children
-
-    method children(DOM::Tiny:D: Str $selector?)
-
-If the current node has children, this method returns only the tags that are
-children of the current node. The C<$selector> may be set to a CSS selector to
-filter the children returned. Only those matching the selector will be returned.
-
-If the current node has no children or is not able to have children, an empty
-list will be returned.
-
-=head2 content
+=head3 content
 
     multi method content(DOM::Tiny:D:) returns Str:D
     multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D
@@ -512,6 +476,311 @@ Given a string, the string will be parsed into HTML or XML (based upon the value
 of the C<:xml> named argument, which defaults to the setting for the current
 node), and the generated node tree will be used to replace the content of the
 current node. The current node is returned.
+
+=head3 namespace
+
+    method namespace(DOM::Tiny:D:) returns Str
+
+Returns the namespace URI of the current tag or Str if it has no namespace.
+
+Returns Nil in all other cases (i.e., the current node is not a tag).
+
+=head3 tag
+
+    multi method tag(DOM::Tiny:D:) returns Str
+    multi method tag(DOM::Tiny:D: Str:D $tag) returns DOM::Tiny:D
+
+If the current node is a tag, both versions of this multi-method are no-ops that silently do nothing.
+
+If no arguments are passed, the name of the tag is returned.
+
+If a single string is passed, the name of the tag is changed to the given string and the current node is returned.
+
+=head3 text
+
+    method text(DOM::Tiny:D: Bool :$trim = False, Bool :$recurse = False) returns Str
+
+This returns the text content of the current node. For a text node, this returns the text of the node itself. For a tag or the root, this will return the text of all of the immediate text node children of the current node concatenated together.
+
+If the argument named C<:recurse> is passed, this method will return the text of all descendants rather than just the immediate children. This is the same as calling C<all-text>.
+
+If the argument named C<:trim> is passed, this method will compress all breaking space into single spaces while concatenating all the text together.
+
+=head3 type
+
+    method type(DOM::Tiny:D:) returns Node:U
+
+This method returns the type of node that is wrapped within the current DOM::Tiny object. This will be one of the following types:
+
+=defn Root
+The root node of the tree.
+
+=defn Tag
+Markup tag nodes within the tree.
+
+=defn Text
+A regular text node.
+
+=defn CDATA
+A CDATA text node.
+
+=defn Comment
+A comment node.
+
+=defn Doctype
+A DOCTYPE tag element.
+
+=defn PI
+An XML processing instruction. This is also used to represent the XML declaration even though it is technically not a PI.
+
+=defn Raw
+A special raw text node, used to represent the text inside of script and style tags.
+
+In addition to these types, you may also want to make use of the following roles, which help group the node types together:
+
+=defn Node
+All nodes, including the root implement this role.
+
+=defn DocumentNode
+All nodes that have a parent have this role, i.e., all but the root.
+
+=defn HasChildren
+Only the nodes that have children have this role, so just Tag and Root.
+
+=defn TextNode
+All nodes that contain text have this role. This includes Text, CDATA, and Raw.
+
+Each of these classes and roles are exported by C<DOM::Tiny> by default. If you prevent these from being exported, you will need to use their full name, which are each prefixed with C<DOM::Tiny::HTML::>. For example, C<Tag> has the full name C<DOM::Tiny::HTML::Tag> and C<TextNode> as the full name C<DOM::Tiny::HTML::TextNode>.
+
+=head3 val
+
+    method val(DOM::Tiny:D) returns Str
+
+Returns the value of the tag. Returns C<Nil> if the current tag has no notion of value or if the current node is not a tag.
+
+Value is computed as follows, based on the tag name:
+
+=item * B<option>: If the option tag has a C<value> attribute, that is the option's value. Otherwise, the option's text is used.
+
+=item * B<input>: The C<value> attribute is used.
+
+=item * B<button>: The C<value> attribute is used.
+
+=item * B<textarea>: The text content of the tag is used as the value.
+
+=item * B<select>: The value of the currently selected option is used. If no option is marked as selected, the select tag has no value. If the select tag has the C<multiple> attribute set, then this returns all the selected values.
+
+=item * Anything else will return C<Nil> for the value.
+
+=head2 Tree Navigation
+
+=head3 postcircumfix:<[]>
+
+    method postcircumfix:<[]>(DOM::Tiny:D: Int:D $i) is rw
+
+The C<.[]> can be used in place of C<child-nodes> to retrieve children of the
+current root or tag from the DOM. The C<:exists> and C<:delete> adverbs also
+work.
+
+=head3 list
+
+    method list(DOM::Tiny:D:) returns List
+
+This is a synonym for C<child-nodes>.
+
+=head3 ancestors
+
+    method ancestors(DOM::Tiny:D: Str $selector?) returns Seq
+
+Returns a sequence of ancestors to the current object as C<DOM::Tiny> objects.
+This will return an empty sequence for the root or any node that no longer
+has a parent (such as may be the case for a recently removed node).
+
+=head3 child-nodes
+
+    method child-nodes(DOM::Tiny:D: Bool :$tags-only = False)
+
+If the current node has children (i.e., a tag or root), this method returns all
+of the children. If the C<:tags-only> flag is set, it returns only the children
+that are tags.
+
+If the current node has no children or is not able to have children, an empty
+list will be returned.
+
+=head3 children
+
+    method children(DOM::Tiny:D: Str $selector?)
+
+If the current node has children, this method returns only the tags that are
+children of the current node. The C<$selector> may be set to a CSS selector to
+filter the children returned. Only those matching the selector will be returned.
+
+If the current node has no children or is not able to have children, an empty
+list will be returned.
+
+=head3 descendant-nodes
+
+    method descendant-nodes(DOM::Tiny:D:)
+
+Returns all the descendants of the current node or an empty list if none or the
+node cannot have descendants. They are returned in depth-first order.
+
+=head3 following
+
+    method following(DOM::Tiny:D: Str $selector?)
+
+Returns all sibling tags of the current node that come after the current node.
+
+=head3 following-nodes
+
+    method following-nodes(DOM::Tiny:D:)
+
+Returns all sibling nodes of the current node that come after the current node.
+
+=head3 next
+
+    method next(DOM::Tiny:D:) returns DOM::Tiny
+
+Returns the next sibling tag of the current node. If there is no such sibling, it returns C<Nil>.
+
+=head3 next-node
+
+    method next-node(DOM::Tiny:D:) returns DOM::Tiny
+
+Returns the next sibling node of the current node. If there is no such sibling, it returns C<Nil>.
+
+=head3 parent
+
+    method parent(DOM::Tiny:D:) returns DOM::Tiny
+
+Returns the parent of the current node. If the current node is the root, this method returns C<Nil> instead.
+
+=head3 preceding
+
+    method preceding(DOM::Tiny:D: Str $selector?)
+
+Retursn all siblings of the current node that are tags that come before the current node. A C<$selector> may be given to filter the returned tags.
+
+=head3 preceding-nodes
+
+    method preceding-nodes(DOM::Tiny:D:)
+
+Returns all siblings nodes of the current node that precede the current node.
+
+=head3 previous
+
+    method previous(DOM::Tiny:D:) returns DOM::Tiny
+
+Returns the previous sibling tag of the current node. If there is no such sibling, it returns C<Nil>.
+
+=head3 previous-node
+
+    method previous-node(DOM::Tiny:D:) returns DOM::Tiny
+
+Returns the previous sibling node of the current node. If there is no such sibling, it returns C<Nil>.
+
+=head3 root
+
+    method root(DOM::Tiny:D:) returns DOM::Tiny:D
+
+Returns the root node of the tree.
+
+=head2 Tree Modification
+
+=head3 append
+
+    method append(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+Appends the given markup content immediately after the current node. The C<:xml>
+flag may be set to determine whether the given markup should be parsed as XML or
+HTML (with the default being whatever the current document is being treated as).
+
+If the current node is the root (i.e., C<$dom.type ~~ Root>), this
+operation is a no-op. It will silently do nothing.
+
+Returns the current node.
+
+=head3 append-content
+
+    method append-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+If this is the root or a tag (i.e., C<$dom.type ~~ Root|Tag>), the given markup
+will be parsed and appended to the end of the root's or tag's children. If this
+is a text node (i.e., C<$dom.type ~~ TextNode>), then the markup will be
+appended to the text node parent's children. Otherwise this is a no-op and will
+silently do nothing.
+
+The C<:xml> flag may be used to specify the format for the markup being parsed,
+defaulting to the setting for the current document.
+
+Returns the node whose children have been modified.
+
+=head3 prepend
+
+    method prepend(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+Appends the given markup content immediately before the current node. The C<:xml> flag may be set to tell the parser to parse in XML mode or not (with the default being whatever is set for the current node).
+
+If the current node is the root, this operation is a no-op and will silently do nothing.
+
+This method will return the current node.
+
+=head3 prepend-content
+
+    method prepend-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+Appends the given markup content at the beginning of the current node's children, if it is the root or a tag. (This is a no-op that silently does nothing unless the current node is the root or a tag.) The C<:xml> flag sets whether to parse the C<$ml> as XML or not, with the default being the xml mode flag set on the current node.
+
+This method returns the current node.
+
+=head3 remove
+
+    method remove(DOM::Tiny:D:) returns DOM::Tiny:D
+
+Removes the current node from the tree and returns the parent node. If this node is the root, then the tree is emptied and the current node (i.e., the root) is returned.
+
+=head3 replace
+
+    method replace(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D
+    method replace(DOM::Tiny:D: Str:D $ml) returns DOM::Tiny:D
+
+The current node is replaced with the tree or markup given.
+
+If the current node is the root, the current node is returned. Otherwise, the original parent of this node, which has been replaced with the new tree, is returned.
+
+=head3 strip
+
+    method strip(DOM::Tiny:D:) returns DOM::Tiny:D
+
+If the current node is a tag, the tag is removed from the tree and its content moved up into the current node's original parent. This will then return the original node's parent.
+
+If the current node is anything else, this is a no-op that will silently do nothing and return the current node.
+
+=head3 wrap
+
+    method wrap(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+The given markup in C<$ml> is parsed according to the format given by the C<:xml> flag (defaulting to whatever the C<xml> setting is for the current node). The current node is put within the innermost tag of the given markup. The current node is returned.
+
+This is a no-op and will silently do nothing if the current node is the root.
+
+=head3 wrap-content
+
+    method wrap-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+
+This is a no-op and will silently do nothing unless the current node is the root or a tag.
+
+The given markup in C<$ml> is parsed. The parsing proceeds as XML if the C<:xml> flag is set or HTML otherwise (with the default being whatever the C<xml> flag is set to on the current node). The content of the current node is then placed within the innermost tag of the parsed markup and that parsed markup replaces the content of the current node.
+
+=head1 AUTHOR AND COPYRIGHT
+
+Copyright 2008-2016 Sebastian Riedel and others.
+
+Copyright 2016 Andrew Sterling Hanenkamp for the port to Perl 6.
+
+This is free software, licensed under:
+
+The Artistic License 2.0 (GPL Compatible)
 
 =end pod
 
