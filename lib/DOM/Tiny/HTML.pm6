@@ -257,7 +257,7 @@ role HasChildren is export {
 
         my $previous-chunk = '';
         [~] gather for @nodes -> $node {
-            next unless $node ~~ Text;
+            next unless $node ~~ TextNode;
             my $chunk = $node.text(:$trim);
             next if $trim && $chunk !~~ / \S /;
 
