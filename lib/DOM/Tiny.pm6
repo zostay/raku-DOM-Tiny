@@ -51,11 +51,6 @@ large test suite, but this was also ported and many of the tests may not even be
 applicable to this port. The API itself is fairly mature and will is unlikely to
 change very much, but the author makes no promises at this point.
 
-B<CAVEAT:> This module has not yet been optimized and performs extremely poorly.
-Currently, if you parse a tree with more than 4 or 5 nested tags (i.e., fairly
-typical HTML documents are usually deeper) you can expect to wait days or years
-before your parse will finish.
-
 DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser. It might support
 some standards as some point, but the implementation is still getting started,
 so no promises. It is relatively robust owing mostly to the enormous test suite
