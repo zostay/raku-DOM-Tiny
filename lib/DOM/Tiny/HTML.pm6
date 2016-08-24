@@ -172,8 +172,8 @@ class DocumentNode is export is Node {
               ?($parent = $parent.parent);
     }
 
-    method trimmable(DocumentNode:D:) returns Bool {
-        !self.ancestor-nodes.first({ .tag eq 'pre' })
+    method trimmable(DocumentNode:D:) returns Bool:D {
+        $.parent.trimmable
     }
 
     method siblings(DocumentNode:D: Bool :$tags-only = False, Bool :$including-self = True) {
@@ -245,7 +245,8 @@ role HasChildren is export {
         MERGE: while @!children[$i + 1] -> $next {
             if @!children[$i] ~~ Text && $next ~~ Text {
                 splice @!children, $i, 2, Text.new(
-                    text => @!children[$i].text ~ $next.text,
+                    text   => @!children[$i].text ~ $next.text,
+                    parent => self,
                 );
                 next MERGE;
             }
@@ -259,7 +260,7 @@ role HasChildren is export {
         [~] gather for @nodes -> $node {
             next unless $node ~~ TextNode;
             my $chunk = $node.text(:$trim);
-            next if $trim && $chunk !~~ / \S /;
+            next if $chunk.chars == 0;
 
             if $previous-chunk ~~ / \S $ / && $chunk ~~ /^ <-[ . ! ? , ; : \s ]>+ / {
                 take " $chunk";
@@ -350,7 +351,7 @@ class Tag is export is DocumentNode does HasChildren {
     method trimmable(Tag:D:) returns Bool {
         return False if $.rcdata;
         return False if $!tag eq 'pre';
-        callsame();
+        $.parent.trimmable;
     }
 
     method render(:$xml) {
