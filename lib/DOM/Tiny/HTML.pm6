@@ -241,8 +241,6 @@ role HasChildren is export {
     method !read-text(:$recurse, :$trim is copy) {
         $trim &&= self.trimmable;
 
-        my $which-children = $recurse ?? TextNode | HasChildren !! TextNode;
-
         my $i = 0;
         MERGE: while @!children[$i + 1] -> $next {
             if @!children[$i] ~~ Text && $next ~~ Text {
@@ -255,10 +253,13 @@ role HasChildren is export {
             $i++;
         }
 
+        my @nodes = $recurse ?? self.descendant-nodes !! self.child-nodes;
+
         my $previous-chunk = '';
-        [~] gather for self.child-nodes.grep($which-children)\
-                                       .map({ .text(:$trim, :$recurse) })\
-                                       .grep({ / \S / or !$trim }) -> $chunk {
+        [~] gather for @nodes -> $node {
+            next unless $node ~~ Text;
+            my $chunk = $node.text(:$trim);
+            next if $trim && $chunk !~~ / \S /;
 
             if $previous-chunk ~~ / \S $ / && $chunk ~~ /^ <-[ . ! ? , ; : \s ]>+ / {
                 take " $chunk";
@@ -271,7 +272,7 @@ role HasChildren is export {
         }
     }
 
-    multi method text(HasChildren:D: Bool :$recurse = False, Bool :$trim = False) is rw {
+    method text(HasChildren:D: Bool :$recurse = False, Bool :$trim = False) is rw {
         my $tree = self;
         Proxy.new(
             FETCH => method ()   { $tree!read-text(:$recurse, :$trim) },
