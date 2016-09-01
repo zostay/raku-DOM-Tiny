@@ -1,9 +1,10 @@
 {
    "meta6" : "0",
    "provides" : {
-      "DOM::Tiny" : "lib/DOM/Tiny.pm",
-      "DOM::Tiny::CSS" : "lib/DOM/Tiny/CSS.pm",
-      "DOM::Tiny::HTML" : "lib/DOM/Tiny/HTML.pm"
+      "DOM::Tiny" : "lib/DOM/Tiny.pm6",
+      "DOM::Tiny::CSS" : "lib/DOM/Tiny/CSS.pm6",
+      "DOM::Tiny::Entities" : "lib/DOM/Tiny/Entities.pm6",
+      "DOM::Tiny::HTML" : "lib/DOM/Tiny/HTML.pm6"
    },
    "test-depends" : [
       "Test"
