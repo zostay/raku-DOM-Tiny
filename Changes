@@ -1,0 +1,9 @@
+v0.2
+
+    * Removed internal references to DOM::Tiny to allow easier subclassing and
+      customization.
+    * Fixed problems with META6.json
+
+v0.1
+
+    * Initial release.

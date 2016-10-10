@@ -17,7 +17,7 @@
    "auth" : "github:zostay",
    "source-url" : "git://github.com/zostay/p6-DOM-Tiny.git",
    "depends" : [],
-   "name" : "DOM-Tiny",
+   "name" : "DOM::Tiny",
    "authors" : [
       "Sterling Hanenkamp <hanenkamp@cpan.org>"
    ],
