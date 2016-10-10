@@ -7,7 +7,7 @@
       "DOM::Tiny::HTML" : "lib/DOM/Tiny/HTML.pm6"
    },
    "test-depends" : [
-      "Test"
+      "Test", "Test::META"
    ],
    "support" : {
       "source" : "git://github.com/zostay/p6-DOM-Tiny.git"
