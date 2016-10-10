@@ -798,7 +798,7 @@ method DELETE-POS(DOM::Tiny:D: Int:D $i) returns DOM::Tiny {
     my $tree = $!tree.children[0]:delete;
     return Nil without $tree;
     $tree.parent = Nil;
-    DOM::Tiny.new(:$tree, :$!xml);
+    self.new(:$tree, :$!xml);
 }
 
 method EXISTS-POS(DOM::Tiny:D: Int:D $i) returns Bool:D {
@@ -835,7 +835,7 @@ method hash(DOM::Tiny:D:) { self.attr }
 multi method parse(DOM::Tiny:U: Str:D $html, Bool :$xml is copy) returns DOM::Tiny:D {
     my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
     $xml //= False;
-    DOM::Tiny.new(:$tree, :$xml);
+    self.new(:$tree, :$xml);
 }
 
 multi method parse(DOM::Tiny:D: Str:D $html, Bool :$xml) returns DOM::Tiny:D {
@@ -944,7 +944,7 @@ multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D {
 multi method content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $.type ~~ HasChildren {
         my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
-        self.content(DOM::Tiny.new(:$tree, :$xml));
+        self.content(self.new(:$tree, :$xml));
     }
 
     # Skip parsing if we can
@@ -963,7 +963,7 @@ method descendant-nodes(DOM::Tiny:D:) {
 }
 method find(DOM::Tiny:D: Str:D $css) {
     $.css.select($css).map({
-        DOM::Tiny.new(tree => $_, :$!xml)
+        self.new(tree => $_, :$!xml)
     });
 }
 method following(DOM::Tiny:D: Str $css?) {
@@ -1070,7 +1070,7 @@ multi method replace(DOM::Tiny:D: DOM::Tiny:D $tree) {
 }
 
 method root(DOM::Tiny:D:) {
-    $!tree ~~ Root ?? self !! DOM::Tiny.new(:tree($!tree.root), :$!xml);
+    $!tree ~~ Root ?? self !! self.new(:tree($!tree.root), :$!xml);
 }
 
 method strip(DOM::Tiny:D:) {
@@ -1148,7 +1148,7 @@ my sub _link($parent, @children) {
 }
 
 method !maybe($tree) {
-    $tree ?? DOM::Tiny.new(:$tree, :$!xml) !! Nil
+    $tree ?? self.new(:$tree, :$!xml) !! Nil
 }
 
 method !replace($parent, $child, @nodes) {
@@ -1158,7 +1158,7 @@ method !replace($parent, $child, @nodes) {
 }
 
 method !select($collection, $selector?) {
-    my $list := $collection.map: { DOM::Tiny.new(:$^tree, :$!xml) };
+    my $list := $collection.map: { self.new(:$^tree, :$!xml) };
     if $selector {
         $list.grep({ .matches($selector) });
     }
