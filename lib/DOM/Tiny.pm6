@@ -1,4 +1,4 @@
-unit class DOM::Tiny;
+unit class DOM::Tiny:ver<0.3>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
 use v6;
 
 use DOM::Tiny::CSS;
@@ -362,6 +362,13 @@ Constructs a DOM::Tiny object with an empty DOM tree. Setting the optional
 C<$xml> flag guarantees XML mode. Setting it to a false guarantees HTML mode. If
 it is unset, DOM::Tiny will select a mode based upon the parsed text, defaulting
 to HTML.
+
+=head3 method deep-clone
+
+    method deep-clone(DOM::Tiny:D:) returns DOM::Tiny:D
+
+Returns a deep-cloned copy of the current DOM::Tiny object and its children. Any
+change to the origin will not impact the copy and vice versa.
 
 =head3 method parse
 
@@ -956,6 +963,11 @@ multi method content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) retur
 }
 
 multi method content(DOM::Tiny:D:) returns Str:D { $!tree.content }
+
+method deep-clone(DOM::Tiny:D:) {
+    # This is an easy solution: TODO A performant deep-cloner solution
+    DOM::Tiny.parse(~self);
+}
 
 method descendant-nodes(DOM::Tiny:D:) {
     return () unless $!tree ~~ HasChildren;

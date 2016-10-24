@@ -1,3 +1,7 @@
+v0.3
+
+    * Added the deep-clone method.
+
 v0.2
 
     * Removed internal references to DOM::Tiny to allow easier subclassing and
