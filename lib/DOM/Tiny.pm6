@@ -1,4 +1,4 @@
-unit class DOM::Tiny:ver<0.3>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
+unit class DOM::Tiny:ver<0.3.1>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
 use v6;
 
 use DOM::Tiny::CSS;
@@ -966,7 +966,7 @@ multi method content(DOM::Tiny:D:) returns Str:D { $!tree.content }
 
 method deep-clone(DOM::Tiny:D:) {
     # This is an easy solution: TODO A performant deep-cloner solution
-    DOM::Tiny.parse(~self);
+    self.WHAT.parse(~self);
 }
 
 method descendant-nodes(DOM::Tiny:D:) {
