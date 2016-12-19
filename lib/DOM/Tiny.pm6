@@ -1,4 +1,4 @@
-unit class DOM::Tiny:ver<0.3.1>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
+unit class DOM::Tiny:ver<0.3.2>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
 use v6;
 
 use DOM::Tiny::CSS;
@@ -447,7 +447,7 @@ RCDATA tag like C<title> or C<textarea> and not in a C<pre> tag).
 
     multi method attr(DOM::Tiny:D:) returns Hash:D
     multi method attr(DOM::Tiny:D: Str:D $name) returns Str
-    multi method attr(DOM::Tiny:D: Str:D $name, Str $value) returns DOM::Tiny:D
+    multi method attr(DOM::Tiny:D: Str:D $name, Str() $value) returns DOM::Tiny:D
     multi method attr(DOM::Tiny:D: Str:D $name, Nil) returns DOM::Tiny:D
     multi method attr(DOM::Tiny:D: *%values) returns DOM::Tiny:D
 
@@ -473,7 +473,7 @@ values and the current node will be returned.
 
     multi method content(DOM::Tiny:D:) returns Str:D
     multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D
-    multi method content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+    multi method content(DOM::Tiny:D: Str() $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
 
 This multi-method works with the content of the node, something like
 C<innerHTML> in the standard DOM.
@@ -702,7 +702,7 @@ Returns the root node of the tree.
 
 =head3 method append
 
-    method append(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+    method append(DOM::Tiny:D: Str() $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
 
 Appends the given markup content immediately after the current node. The C<:xml>
 flag may be set to determine whether the given markup should be parsed as XML or
@@ -715,7 +715,7 @@ Returns the current node.
 
 =head3 method append-content
 
-    method append-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+    method append-content(DOM::Tiny:D: Str() $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
 
 If this is the root or a tag (i.e., C<$dom.type ~~ Root|Tag>), the given markup
 will be parsed and appended to the end of the root's or tag's children. If this
@@ -730,7 +730,7 @@ Returns the node whose children have been modified.
 
 =head3 method prepend
 
-    method prepend(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+    method prepend(DOM::Tiny:D: Str() $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
 
 Appends the given markup content immediately before the current node. The C<:xml> flag may be set to tell the parser to parse in XML mode or not (with the default being whatever is set for the current node).
 
@@ -740,7 +740,7 @@ This method will return the current node.
 
 =head3 method prepend-content
 
-    method prepend-content(DOM::Tiny:D: Str:D $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
+    method prepend-content(DOM::Tiny:D: Str() $ml, Bool :$xml = $!xml) returns DOM::Tiny:D
 
 Appends the given markup content at the beginning of the current node's children, if it is the root or a tag. (This is a no-op that silently does nothing unless the current node is the root or a tag.) The C<:xml> flag sets whether to parse the C<$ml> as XML or not, with the default being the xml mode flag set on the current node.
 
@@ -755,7 +755,7 @@ Removes the current node from the tree and returns the parent node. If this node
 =head3 method replace
 
     method replace(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D
-    method replace(DOM::Tiny:D: Str:D $ml) returns DOM::Tiny:D
+    method replace(DOM::Tiny:D: Str() $ml) returns DOM::Tiny:D
 
 The current node is replaced with the tree or markup given.
 
@@ -906,7 +906,7 @@ multi method attr(DOM::Tiny:D: Str:D $name) returns Str {
     $!tree.attr{ $name } // Str;
 }
 
-multi method attr(DOM::Tiny:D: Str:D $name, Str $value) returns DOM::Tiny:D {
+multi method attr(DOM::Tiny:D: Str:D $name, Str() $value) returns DOM::Tiny:D {
     return self unless $!tree ~~ Tag;
     $!tree.attr{ $name } = $value;
     self;
@@ -948,7 +948,7 @@ multi method content(DOM::Tiny:D: DOM::Tiny:D $tree) returns DOM::Tiny:D {
     self;
 }
 
-multi method content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
+multi method content(DOM::Tiny:D: Str() $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $.type ~~ HasChildren {
         my $tree = DOM::Tiny::HTML::_parse($html, :$xml);
         self.content(self.new(:$tree, :$xml));
@@ -1031,7 +1031,7 @@ method preceding-nodes(DOM::Tiny:D:) {
     self!siblings()<before>;
 }
 
-method prepend(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
+method prepend(DOM::Tiny:D: Str() $html, Bool :$xml is copy = $!xml) returns DOM::Tiny:D {
     if $!tree ~~ DocumentNode {
         my $i = $!tree.parent.children.first(* === $!tree, :k);
         $!tree.parent.children.splice: $i, 0,
@@ -1040,7 +1040,7 @@ method prepend(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) returns DOM
 
     self;
 }
-method prepend-content(DOM::Tiny:D: Str:D $html, Bool :$xml is copy = $!xml) {
+method prepend-content(DOM::Tiny:D: Str() $html, Bool :$xml is copy = $!xml) {
     if $!tree ~~ HasChildren {
         $!tree.children.prepend:
             _link($!tree, DOM::Tiny::HTML::_parse($html, :$xml).child-nodes);
@@ -1066,7 +1066,7 @@ method previous-node(DOM::Tiny:D:) {
 
 method remove(DOM::Tiny:D:) { self.replace('') }
 
-multi method replace(DOM::Tiny:D: Str:D $html) {
+multi method replace(DOM::Tiny:D: Str() $html) {
     self.replace(DOM::Tiny.parse($html, :$!xml));
 }
 

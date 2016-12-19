@@ -1,3 +1,8 @@
+v0.3.2
+
+    * Slightly more permissive acceptance of stringifiable values being sent to
+      some modification methods.
+
 v0.3.1
 
     * Fix the deep-clone method for extensibility.
