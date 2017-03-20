@@ -165,11 +165,11 @@ class DocumentNode is export is Node {
         return () if $context && $*TREE-CONTEXT && self === $*TREE-CONTEXT;
 
         my $parent = $!parent;
-        gather repeat {
+        (gather repeat {
             take $parent if $parent ~~ DocumentNode || $root;
             last if $context && $parent === $*TREE-CONTEXT;
         } while $parent ~~ DocumentNode &&
-              ?($parent = $parent.parent);
+              ?($parent = $parent.parent)).cache;
     }
 
     method trimmable(DocumentNode:D:) returns Bool:D {
@@ -178,8 +178,8 @@ class DocumentNode is export is Node {
 
     method siblings(DocumentNode:D: Bool :$tags-only = False, Bool :$including-self = True) {
         my $siblings = $!parent.child-nodes(:$tags-only);
-        $siblings.=grep({ $_ !=== self }) unless $including-self;
-        $siblings.list
+        $siblings.=grep({ $_ !=== self }).cache unless $including-self;
+        $siblings
     }
 
     method split-siblings(DocumentNode:D: Bool :$tags-only) {
@@ -190,8 +190,8 @@ class DocumentNode is export is Node {
                      after  => @us[$pos + 1 .. *];
 
         if $tags-only {
-            %result<before> .= grep(Tag);
-            %result<after>  .= grep(Tag);
+            %result<before> .= grep(Tag) .= cache;
+            %result<after>  .= grep(Tag) .= cache;
         }
 
         %result;
@@ -205,19 +205,19 @@ role HasChildren is export {
     has DocumentNode @.children is rw;
 
     method descendant-nodes(HasChildren:D: Bool :$tags-only = False) {
-        flat self.child-nodes(:$tags-only).map(-> $node {
+        (flat self.child-nodes(:$tags-only).map(-> $node {
             if $node.WHAT ~~ Tag {
                 ($node, $node.descendant-nodes(:$tags-only))
             }
             else {
                 $node
             }
-        });
+        })).cache;
     }
 
     method child-nodes(HasChildren:D: Bool :$tags-only = False) {
         if $tags-only {
-            @!children.grep(Tag);
+            @!children.grep(Tag).cache;
         }
         else {
             @!children;

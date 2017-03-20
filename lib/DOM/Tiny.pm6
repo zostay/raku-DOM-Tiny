@@ -1184,7 +1184,7 @@ method !siblings(:$tags-only = False, :$pos) {
         $!tree.split-siblings(:$tags-only);
     }
     else {
-        { before => [], after => [] },
+        { before => (), after => () },
     }
 
     with $pos {
