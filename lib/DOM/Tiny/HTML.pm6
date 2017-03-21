@@ -178,8 +178,8 @@ class DocumentNode is export is Node {
 
     method siblings(DocumentNode:D: Bool :$tags-only = False, Bool :$including-self = True) {
         my $siblings = $!parent.child-nodes(:$tags-only);
-        $siblings.=grep({ $_ !=== self }).cache unless $including-self;
-        $siblings
+        $siblings.=grep({ $_ !=== self }).=cache unless $including-self;
+        |$siblings
     }
 
     method split-siblings(DocumentNode:D: Bool :$tags-only) {
