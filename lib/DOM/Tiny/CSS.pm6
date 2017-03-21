@@ -234,7 +234,7 @@ grammar Selector {
         ':' <pseudo-class>
     }
     token selector:sym<tag> {
-        [ <.escape> \s | '\\' . | <-[,.#:\[\s>~+()]> ]+ #]
+        [ <.escape> \s || '\\' . || <-[,.#:\[\s>~+()]> ]+ #]
     }
     token selector:sym<any> { '*' }
 
@@ -290,7 +290,7 @@ grammar Selector {
     token attr-op:sym<$=> { '$=' }
     token attr-op:sym<*=> { '*=' }
 
-    token name { [ <.escape> \s | '\\' . | <-[\\,.#:[\ )>~+]> ]+ } #]
+    token name { [ <.escape> \s || '\\' . || <-[\\,.#:[\ )>~+]> ]+ } #]
     token escape {
         | '\\' <-[0..9 a..f A..F]>
         | '\\' <[0..9 a..f A..F]> ** 1..6
