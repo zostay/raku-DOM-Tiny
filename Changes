@@ -1,3 +1,9 @@
+v0.3.3
+
+    * Fix bugs that cropped up with newer versions of Rakudo related to parsing
+      and the fact that many more methods now return Seq and need extra help to
+      make sure they don't break because of how Seq is optimized.
+
 v0.3.2
 
     * Slightly more permissive acceptance of stringifiable values being sent to
