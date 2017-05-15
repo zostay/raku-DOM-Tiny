@@ -1,9 +1,8 @@
 language: perl6
 install:
-  - rakudobrew build-panda
-  - panda installdeps .
+  - rakudobrew build-zef
+  - zef install --depsonly .
 script:
   - prove -v -e "perl6 --ll-exception -Ilib" t
-  - PANDA_SUBMIT_TESTREPORTS=1 panda install .
 after_success:
-  - panda list --installed --verbose
+  - zef list --installed --verbose
