@@ -21,7 +21,7 @@
    "authors" : [
       "Sterling Hanenkamp <hanenkamp@cpan.org>"
    ],
-   "version" : "0.3.3",
+   "version" : "0.3.4",
    "license" : "Artistic-2.0",
    "description" : "Very small, self-sufficient DOM parser manipulator"
 }
