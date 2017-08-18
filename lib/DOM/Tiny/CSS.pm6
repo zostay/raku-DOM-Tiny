@@ -439,7 +439,7 @@ method select-one(DOM::Tiny::CSS:D: Str:D $css) returns DocumentNode:D {
 my sub _compile($css) {
     DOM::Tiny::CSS::Selector.parse($css,
         actions => DOM::Tiny::CSS::Compiler,
-    ).made // fail('syntax error in selector');
+    ) andthen .made orelse fail('syntax error in selector')
 }
 
 my multi _unescape(Str:D $value is copy) {
