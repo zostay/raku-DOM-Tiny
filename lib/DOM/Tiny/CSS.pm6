@@ -394,14 +394,14 @@ class Compiler {
     method equation:sym<even>($/)     { make [2, 2] }
     method equation:sym<odd>($/)      { make [2, 1] }
     method equation:sym<number>($/)   { make [0, (~$<number>).Int] }
-    method equation:sym<function>($/) {
-        my $coeff = do given ~$<coeff> {
+    method equation:sym<function>($match) {
+        my $coeff = do given ~$match<coeff> {
             when '-' { -1 }
             when ''  { 1 }
             default  { .subst(/\s+/, '').Int }
         }
-        my $offset = ($<offset>//'').Str.subst(/\s+/, '').Int // 0;
-        make [$coeff, $offset]
+        my $offset = ($match<offset>//'').Str.subst(/\s+/, '').Int // 0;
+        $match.make: [$coeff, $offset]
     }
 
     method attr-value($/) {
