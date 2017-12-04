@@ -1,14 +1,8 @@
-unit class DOM::Tiny:ver<0.3.5>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
+unit class DOM::Tiny:ver<0.4.0>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
 use v6;
 
 use DOM::Tiny::CSS;
 use DOM::Tiny::HTML;
-
-my package EXPORT::DEFAULT {
-    for < Root Text Tag Raw PI Doctype Comment CDATA DocumentNode Node HasChildren TextNode > -> $type {
-        OUR::{ "$type" } := DOM::Tiny::HTML::{ $type };
-    }
-}
 
 =begin pod
 
@@ -45,25 +39,24 @@ my package EXPORT::DEFAULT {
 
 =begin DESCRIPTION
 
-B<BEWARE:> This software is still alpha quality. It is a port of a stable,
-mature module in Perl 5, but this module is neither stable nor mature. It has a
-large test suite, but this was also ported and many of the tests may not even be
-applicable to this port. The API itself is fairly mature and will is unlikely to
-change very much, but the author makes no promises at this point.
+B<BEWARE:> This software is early beta quality. It is a port of a stable, mature
+module in Perl 5. This module is not mature. It has a large test suite, but this
+was also ported and some of the tests may not be completely applicable to this
+port. The API itself is fairly mature and will is unlikely to change very much.
+If breaking changes are made at this point, there will at least be a minor
+version number bump (e.g., 0.3.5 to 0.4.0).
 
-DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser. It might support
-some standards as some point, but the implementation is still getting started,
-so no promises. It is relatively robust owing mostly to the enormous test suite
-inherited from its progenitor. The HTML/XML parsing is very forgiving and the
-CSS parser supports a reasonable subset of CSS3 for selecting elements in the
-DOM tree.
+DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser.  It is
+relatively robust owing mostly to the enormous test suite inherited from its
+progenitor. The HTML/XML parsing is very forgiving and the CSS parser supports a
+reasonable subset of CSS3 for selecting elements in the DOM tree.
 
 This module started as a port of Mojo::DOM58 from Perl 5, but maintaining
 compatibility with that library is not a major aim of this project. In fact,
 features of Perl 6 render certain aspects of Mojo::DOM58 completely redundant.
 For example, the collection system that provides custom features such as C<map>,
-C<each>, C<reduce>, etc. are completely unnecessary in Perl 6 as built-in syntax
-is as simple or simpler to use and safer.
+C<each>, C<reduce>, etc. are completely unnecessary in Perl 6. The built-in
+syntax is as simple or simpler to use and safer in every case.
 
 =end DESCRIPTION
 
@@ -77,7 +70,10 @@ When we parse an HTML/XML fragment, it gets turned into a tree of nodes.
     <body>World!</body>
     </html>
 
-There are currently the following different kinds of nodes: Root, Text, Tag, Raw, PI, Doctype, Comment, and CDATA. These can also be grouped into the following roles: DocumentNode (anything but Root), Node (all kinds), HasChildren (Root and Tag), and TextNode (includes Text, CDATA, and Raw).
+There are currently the following different kinds of nodes: Root, Text, Tag,
+Raw, PI, Doctype, Comment, and CDATA. These can also be grouped into the
+following roles: DocumentNode (anything but Root), Node (all kinds), HasChildren
+(Root and Tag), and TextNode (includes Text, CDATA, and Raw).
 
     Root
     |- Doctype (html)
@@ -88,23 +84,43 @@ There are currently the following different kinds of nodes: Root, Text, Tag, Raw
        +- Tag (body)
           +- Text (World!)
 
-While all node types are represented as DOM::Tiny objects, some methods like C<attr> and C<namespace> only apply to elements.
+While all node types are represented as DOM::Tiny objects, some methods like
+C<attr> and C<namespace> only apply to elements.
+
+Under normal circumstances you will probably never need to use these objects directly, but they are available in case you have some special need.
+
+These objects are all defined in the L<DOM::Tiny::HTML> namespace. If you want to import the short names, they are exported by default by that compilation unit:
+
+    {
+        use DOM::Tiny;
+        my $t = DOM::Tiny::HTML::Text.new(:text<Hello>);
+    }
+
+    {
+        use DOM::Tiny;
+        use DOM::Tiny::HTML;
+        my $t = Text.new(:text<Hello>);
+    }
 
 =head1 CASE SENSITIVITY
 
-DOM::Tiny defaults to HTML semantics, that means all tags and attribute names are lowercased and selectors need to be lowercase as well.
+DOM::Tiny defaults to HTML semantics. That means all tags and attribute names
+are automatically lowercased at parse time. Selectors will, therefore, need to
+be lowercase to match anything as matching is still case-sensitive.
 
     # HTML semantics
     my $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>');
     say $dom.at('p[id]').text;
 
-If an XML declaration is found at the start of the snippet to parse, the parser will automatically switch into XML mode and everything becomes case-sensitive.
+If an XML declaration is found at the start of the snippet to parse, the parser
+will automatically switch into XML mode and everything becomes case-sensitive.
 
     # XML semantics
     my $dom = DOM::Tiny.parse('<?xml version="1.0"?><P ID="greeting">Hi!</P>');
     say $dom.at('P[ID]').text;
 
-XML detection can also be disabled by setting the C<:xml> flag.
+XML detection can also be disabled or forced by explicitly setting the C<:xml>
+flag as needed.
 
     # Force XML semantics
     my $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>', :xml);
@@ -116,7 +132,8 @@ XML detection can also be disabled by setting the C<:xml> flag.
 
 =head1 SELECTORS
 
-DOM::Tiny uses a CSS selector engine found in L<DOM::Tiny::CSS>. All CSS selectors that make sense for a standalone parser are supported.
+DOM::Tiny uses a CSS selector engine found in L<DOM::Tiny::CSS>. We try to
+support all all CSS selectors that make sense for a standalone parser.
 
 =head2 *
 
@@ -145,17 +162,21 @@ An E element whose foo attribute value is exactly equal to bar.
 
 =head2 E[foo="bar" i]
 
-An E element whose foo attribute value is exactly equal to any case-permutation of bar.
+An E element whose foo attribute value is exactly equal to any case-permutation
+of bar.
 
     my $case_insensitive = $dom.find('input[type="hidden" i]');
     my $case_insensitive = $dom.find('input[type=hidden i]');
     my $case_insensitive = $dom.find('input[class~="foo" i]');
 
-This selector is part of Selectors Level 4, which is still a work in progress.
+This selector is part of Selectors Level 4. The "i" modifier may be added to any
+attribute selector to make what is normally an exact match to one that matches
+any case-permutation.
 
 =head2 E[foo~="bar"]
 
-An E element whose foo attribute value is a list of whitespace-separated values, one of which is exactly equal to bar.
+An E element whose foo attribute value is a list of whitespace-separated values,
+one of which is exactly equal to bar.
 
     my $foo = $dom.find('input[class~="foo"]');
     my $foo = $dom.find('input[class~=foo]');
@@ -198,7 +219,7 @@ An E element, the n-th child of its parent.
 
 =head2 E:nth-last-child(n)
 
-An E element, the n-th child of its parent, counting from the last one.
+An E element, the n-th child of its parent, but counting backwards from the end.
 
     my $third    = $dom.find('div:nth-last-child(3)');
     my $odd      = $dom.find('div:nth-last-child(odd)');
@@ -216,7 +237,7 @@ An E element, the n-th sibling of its type.
 
 =head2 E:nth-last-of-type(n)
 
-An E element, the n-th sibling of its type, counting from the last one.
+An E element, the n-th sibling of its type, counting backwards from the end.
 
     my $third    = $dom.find('div:nth-last-of-type(3)');
     my $odd      = $dom.find('div:nth-last-of-type(odd)');
@@ -261,7 +282,8 @@ An E element, only sibling of its type.
 
 =head2 E:empty
 
-An E element that has no children (including text nodes).
+An E element that has no children (including text nodes, meaning the element
+does not even contain whitespace).
 
     my $empty = $dom.find(':empty');
 
@@ -279,7 +301,7 @@ An E element whose class is "warning".
 
 =head2 E#myid
 
-An E element with ID equal to "myid".
+An E element with an "id" attribute equal to "myid". Basically, a shorthand for C<E[id=foo]>.
 
     my $foo = $dom.at('div#foo');
 

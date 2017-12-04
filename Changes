@@ -1,3 +1,11 @@
+v0.4.0
+
+    * Bugfix #5: Previously, the node classes defined in DOM::Tiny::HTML
+      were exported by DOM::Tiny. This is no longer the case, to avoid naming
+      conflicts with other modules. [HT: zoffixznet]
+    * If you request the :short export grouping when importing DOM::Tiny, the
+      old export behavior is provided.
+
 v0.3.5
 
     * Bugfix #4: The grammar used .subst() while using a readonly $/ as argument
