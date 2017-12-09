@@ -3,6 +3,7 @@ use v6;
 
 use Test;
 use DOM::Tiny;
+use DOM::Tiny::HTML;
 
 my $dom = DOM::Tiny.parse(
   '<!DOCTYPE before><p>test<![CDATA[123]]><!-- 456 --></p><?after?>');

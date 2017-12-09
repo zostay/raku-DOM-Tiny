@@ -3,6 +3,7 @@ use v6;
 
 use Test;
 use DOM::Tiny;
+use DOM::Tiny::HTML;
 
 my $dom = DOM::Tiny.parse(
     q[<foo><bar a="b&lt;c">ju<baz a23>s<bazz />t</bar>works</foo>],

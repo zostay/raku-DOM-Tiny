@@ -3,6 +3,7 @@ use v6;
 
 use Test;
 use DOM::Tiny;
+use DOM::Tiny::HTML;
 
 # Wrap content
 my $dom = DOM::Tiny.parse('<a>Test</a>');

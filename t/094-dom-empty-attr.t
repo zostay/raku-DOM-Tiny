@@ -3,6 +3,7 @@ use v6;
 
 use Test;
 use DOM::Tiny;
+use DOM::Tiny::HTML;
 
 # Empty attribute value
 my $dom = DOM::Tiny.parse(q:to/EOF/);

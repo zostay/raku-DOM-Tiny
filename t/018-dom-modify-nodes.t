@@ -3,6 +3,7 @@ use v6;
 
 use Test;
 use DOM::Tiny;
+use DOM::Tiny::HTML;
 
 my $dom = DOM::Tiny.parse('<script>la<la>la</script>');
 is $dom.at('script').type, Tag, 'right type';
