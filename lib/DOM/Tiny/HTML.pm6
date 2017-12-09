@@ -173,7 +173,7 @@ class DocumentNode is export is Node {
     }
 
     method trimmable(DocumentNode:D:) returns Bool:D {
-        $.parent.trimmable
+        try { $.parent.trimmable } // True
     }
 
     method siblings(DocumentNode:D: Bool :$tags-only = False, Bool :$including-self = True) {
@@ -239,7 +239,7 @@ role HasChildren is export {
     }
 
     method !read-text(:$recurse, :$trim is copy) {
-        $trim &&= self.trimmable;
+        $trim &&= try { self.trimmable } // True;
 
         my $i = 0;
         MERGE: while @!children[$i + 1] -> $next {
@@ -291,12 +291,15 @@ role TextNode is export {
 
     method !squished-text { $!text.trim.subst(/\s+/, ' ', :global) }
 
-    multi method text(TextNode:D: Bool :$trim is copy = False) {
-        $trim &&= self.trimmable;
-        $trim ?? self!squished-text !! $!text
+    multi method text(TextNode:D:) returns Str is rw {
+        return-rw $!text;
     }
 
-    multi method text(TextNode:D:) is rw { return-rw $!text }
+    multi method text(TextNode:D: Bool :$trim!) returns Str {
+        my $do-trim = $trim;
+        $do-trim  &&= try { self.trimmable } // True;
+        $do-trim ?? self!squished-text !! $!text
+    }
 
     multi method content(TextNode:D:) { $!text }
     multi method content(TextNode:D: Str:D $text) { $!text = $text }
@@ -351,7 +354,7 @@ class Tag is export is DocumentNode does HasChildren {
     method trimmable(Tag:D:) returns Bool {
         return False if $.rcdata;
         return False if $!tag eq 'pre';
-        $.parent.trimmable;
+        try { $.parent.trimmable } // True;
     }
 
     method render(:$xml) {

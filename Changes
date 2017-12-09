@@ -3,6 +3,10 @@ v0.4.0
     * Bugfix #5: Previously, the node classes defined in DOM::Tiny::HTML
       were exported by DOM::Tiny. This is no longer the case, to avoid naming
       conflicts with other modules. [HT: zoffixznet]
+    * Bugfix: The text attribute of text nodes was intended to be rw, but
+      attempts to write always failed previously.
+    * Bugfix: The trimmable attribute was accessed in a way that could result in
+      exceptions when it should not. This has been correct.
     * If you request the :short export grouping when importing DOM::Tiny, the
       old export behavior is provided.
 
