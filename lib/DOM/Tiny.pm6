@@ -1,4 +1,4 @@
-unit class DOM::Tiny:ver<0.4.1>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
+unit class DOM::Tiny:ver<0.4.0>:auth<Sterling Hanenkamp (hanenkamp@cpan.org)>;
 use v6;
 
 use DOM::Tiny::CSS;

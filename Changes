@@ -1,9 +1,6 @@
-v0.4.1
-
-    * Released to CPAN.
-
 v0.4.0
 
+    * Released to CPAN.
     * Bugfix #5: Previously, the node classes defined in DOM::Tiny::HTML
       were exported by DOM::Tiny. This is no longer the case, to avoid naming
       conflicts with other modules. [HT: zoffixznet]
