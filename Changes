@@ -1,3 +1,7 @@
+v0.4.1
+
+    * Released to CPAN.
+
 v0.4.0
 
     * Bugfix #5: Previously, the node classes defined in DOM::Tiny::HTML
