@@ -7,7 +7,8 @@ my class Joiner {
     has @.combine;
 
     submethod BUILD(:@combine) {
-        PRE { @combine.elems !%% 2 }
+        # This was PRE until #10, maybe return to PRE after rakudo/rakudo#2053
+        @combine.elems !%% 2 or die "PRE-condition failed";
         @!combine = @combine.reverse;
     }
 

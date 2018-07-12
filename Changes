@@ -1,3 +1,9 @@
+v0.4.1
+
+    * Bugfix #10 and rakudo/rakudo#2053: Remove PRE that was causing thread
+      safety issues. Probably a bug in rakudo, but fixing it here until it can
+      be fixed there since the fix is small and simple.
+
 v0.4.0
 
     * Released to CPAN.
@@ -7,9 +13,11 @@ v0.4.0
     * Bugfix: The text attribute of text nodes was intended to be rw, but
       attempts to write always failed previously.
     * Bugfix: The trimmable attribute was accessed in a way that could result in
-      exceptions when it should not. This has been correct.
-    * If you request the :short export grouping when importing DOM::Tiny, the
+      exceptions when it should not. This has been corrected.
+    * If you request the :short export group when importing DOM::Tiny, the
       old export behavior is provided.
+    * Adding a todo test for a case where a node becomes immutable when it
+      should not, but have not been able to resolve the issue yet.
 
 v0.3.5
 
