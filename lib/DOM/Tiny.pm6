@@ -39,13 +39,6 @@ use DOM::Tiny::HTML;
 
 =begin DESCRIPTION
 
-B<BEWARE:> This software is early beta quality. It is a port of a stable, mature
-module in Perl 5. This module is not mature. It has a large test suite, but this
-was also ported and some of the tests may not be completely applicable to this
-port. The API itself is fairly mature and will is unlikely to change very much.
-If breaking changes are made at this point, there will at least be a minor
-version number bump (e.g., 0.3.5 to 0.4.0).
-
 DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser.  It is
 relatively robust owing mostly to the enormous test suite inherited from its
 progenitor. The HTML/XML parsing is very forgiving and the CSS parser supports a
@@ -807,6 +800,22 @@ This is a no-op and will silently do nothing unless the current node is the root
 
 The given markup in C<$ml> is parsed. The parsing proceeds as XML if the C<:xml> flag is set or HTML otherwise (with the default being whatever the C<xml> flag is set to on the current node). The content of the current node is then placed within the innermost tag of the parsed markup and that parsed markup replaces the content of the current node.
 
+=head1 CAVEATS
+
+This software is beta quality. It has been ported from a mature code base and survived many uses, but it has still only had a small number of bugs reported and fixed. It has a large test suite, but much of that has been ported from the Perl 5 module and is not necessarily specific to the kinds of bugs this port has. There has also been very little done to optimize the code or even to check to make sure it performs well in how it utilizes CPU and memory.
+
+As of the v0.5.0, this project is committed to the following signals regarding changes to this software in the future:
+
+=item The major version number ("1" in "1.2.3") will be incremented whenever a documented feature changes in a way that is not backwards compatible.
+
+=item The minor version number ("2" in "1.2.3") will be incremented whenever new features or added or any backwards compatible change is made to an undocumented feature or some other significant change is made to the project.
+
+=item The patch number ("3" in "1.2.3") will be incremented whenever any other change is made (e.g., documentation, testing, minor bug fixes, etc.)
+
+Semantic versioning is not a perfect system as it is not always crystal clear what distinguishes "bug fix" from "new feature" or "backwards compatible change" until after the fact, but I will try to do my best.
+
+Any change thought to break backwards compatibility will be tagged with "BREAKING CHANGE" in C<Changes>.
+
 =head1 AUTHOR AND COPYRIGHT
 
 Copyright 2008-2016 Sebastian Riedel and others.
@@ -871,11 +880,6 @@ multi method parse(DOM::Tiny:D: Str:D $html, Bool :$xml) returns DOM::Tiny:D {
     $!xml  = $xml with $xml;
     $!tree = DOM::Tiny::HTML::_parse($html, :$!xml);
     self
-}
-
-multi to-json(DOM::Tiny:D $dom) is export {
-    my $xml = $dom.xml // False;
-    DOM::Tiny::HTML::_render($dom.tree, :$xml)
 }
 
 method all-text(DOM::Tiny:D: Bool :$trim = False) {

@@ -1,3 +1,9 @@
+{{$NEXT}}
+
+    * Updated POD to reflect the maturing nature of this library.
+    * Bugfix #12: There was a `to-json` subroutine being exported that was not
+      documented and non-functional. It has been removed.
+
 v0.4.1
 
     * Bugfix #10 and rakudo/rakudo#2053: Remove PRE that was causing thread
