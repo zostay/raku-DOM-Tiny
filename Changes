@@ -1,3 +1,5 @@
+{{$NEXT}}
+
 v0.5.0	2018-10-26
 
     * Updated POD to reflect the maturing nature of this library.
