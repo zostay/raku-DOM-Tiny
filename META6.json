@@ -12,6 +12,7 @@
    "support" : {
       "source" : "git://github.com/zostay/p6-DOM-Tiny.git"
    },
+   "tags": ["HTML", "parsing"],
    "perl" : "6.c",
    "build-depends" : [],
    "auth" : "github:zostay",
