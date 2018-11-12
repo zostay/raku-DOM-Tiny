@@ -34,11 +34,9 @@ SYNOPSIS
 DESCRIPTION
 ===========
 
-**BEWARE:** This software is still alpha quality. It is a port of a stable, mature module in Perl 5, but this module is neither stable nor mature. It has a large test suite, but this was also ported and many of the tests may not even be applicable to this port. The API itself is fairly mature and will is unlikely to change very much, but the author makes no promises at this point.
+DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser. It is relatively robust owing mostly to the enormous test suite inherited from its progenitor. The HTML/XML parsing is very forgiving and the CSS parser supports a reasonable subset of CSS3 for selecting elements in the DOM tree.
 
-DOM::Tiny is a smallish, relaxed pure-Perl HTML/XML DOM parser. It might support some standards as some point, but the implementation is still getting started, so no promises. It is relatively robust owing mostly to the enormous test suite inherited from its progenitor. The HTML/XML parsing is very forgiving and the CSS parser supports a reasonable subset of CSS3 for selecting elements in the DOM tree.
-
-This module started as a port of Mojo::DOM58 from Perl 5, but maintaining compatibility with that library is not a major aim of this project. In fact, features of Perl 6 render certain aspects of Mojo::DOM58 completely redundant. For example, the collection system that provides custom features such as `map`, `each`, `reduce`, etc. are completely unnecessary in Perl 6 as built-in syntax is as simple or simpler to use and safer.
+This module started as a port of Mojo::DOM58 from Perl 5, but maintaining compatibility with that library is not a major aim of this project. In fact, features of Perl 6 render certain aspects of Mojo::DOM58 completely redundant. For example, the collection system that provides custom features such as `map`, `each`, `reduce`, etc. are completely unnecessary in Perl 6. The built-in syntax is as simple or simpler to use and safer in every case.
 
 NODES AND ELEMENTS
 ==================
@@ -64,10 +62,25 @@ There are currently the following different kinds of nodes: Root, Text, Tag, Raw
 
 While all node types are represented as DOM::Tiny objects, some methods like `attr` and `namespace` only apply to elements.
 
+Under normal circumstances you will probably never need to use these objects directly, but they are available in case you have some special need.
+
+These objects are all defined in the [DOM::Tiny::HTML](DOM::Tiny::HTML) namespace. If you want to import the short names, they are exported by default by that compilation unit:
+
+    {
+        use DOM::Tiny;
+        my $t = DOM::Tiny::HTML::Text.new(:text<Hello>);
+    }
+
+    {
+        use DOM::Tiny;
+        use DOM::Tiny::HTML;
+        my $t = Text.new(:text<Hello>);
+    }
+
 CASE SENSITIVITY
 ================
 
-DOM::Tiny defaults to HTML semantics, that means all tags and attribute names are lowercased and selectors need to be lowercase as well.
+DOM::Tiny defaults to HTML semantics. That means all tags and attribute names are automatically lowercased at parse time. Selectors will, therefore, need to be lowercase to match anything as matching is still case-sensitive.
 
     # HTML semantics
     my $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>');
@@ -79,7 +92,7 @@ If an XML declaration is found at the start of the snippet to parse, the parser 
     my $dom = DOM::Tiny.parse('<?xml version="1.0"?><P ID="greeting">Hi!</P>');
     say $dom.at('P[ID]').text;
 
-XML detection can also be disabled by setting the `:xml` flag.
+XML detection can also be disabled or forced by explicitly setting the `:xml` flag as needed.
 
     # Force XML semantics
     my $dom = DOM::Tiny.parse('<P ID="greeting">Hi!</P>', :xml);
@@ -92,7 +105,7 @@ XML detection can also be disabled by setting the `:xml` flag.
 SELECTORS
 =========
 
-DOM::Tiny uses a CSS selector engine found in [DOM::Tiny::CSS](DOM::Tiny::CSS). All CSS selectors that make sense for a standalone parser are supported.
+DOM::Tiny uses a CSS selector engine found in [DOM::Tiny::CSS](DOM::Tiny::CSS). We try to support all all CSS selectors that make sense for a standalone parser.
 
 *
 -
@@ -132,7 +145,7 @@ An E element whose foo attribute value is exactly equal to any case-permutation 
     my $case_insensitive = $dom.find('input[type=hidden i]');
     my $case_insensitive = $dom.find('input[class~="foo" i]');
 
-This selector is part of Selectors Level 4, which is still a work in progress.
+This selector is part of Selectors Level 4. The "i" modifier may be added to any attribute selector to make what is normally an exact match to one that matches any case-permutation.
 
 E[foo~="bar"]
 -------------
@@ -186,7 +199,7 @@ An E element, the n-th child of its parent.
 E:nth-last-child(n)
 -------------------
 
-An E element, the n-th child of its parent, counting from the last one.
+An E element, the n-th child of its parent, but counting backwards from the end.
 
     my $third    = $dom.find('div:nth-last-child(3)');
     my $odd      = $dom.find('div:nth-last-child(odd)');
@@ -206,7 +219,7 @@ An E element, the n-th sibling of its type.
 E:nth-last-of-type(n)
 ---------------------
 
-An E element, the n-th sibling of its type, counting from the last one.
+An E element, the n-th sibling of its type, counting backwards from the end.
 
     my $third    = $dom.find('div:nth-last-of-type(3)');
     my $odd      = $dom.find('div:nth-last-of-type(odd)');
@@ -258,7 +271,7 @@ An E element, only sibling of its type.
 E:empty
 -------
 
-An E element that has no children (including text nodes).
+An E element that has no children (including text nodes, meaning the element does not even contain whitespace).
 
     my $empty = $dom.find(':empty');
 
@@ -279,7 +292,7 @@ An E element whose class is "warning".
 E#myid
 ------
 
-An E element with ID equal to "myid".
+An E element with an "id" attribute equal to "myid". Basically, a shorthand for `E[id=foo]`.
 
     my $foo = $dom.at('div#foo');
 
@@ -743,6 +756,23 @@ This is a no-op and will silently do nothing unless the current node is the root
 
 The given markup in `$ml` is parsed. The parsing proceeds as XML if the `:xml` flag is set or HTML otherwise (with the default being whatever the `xml` flag is set to on the current node). The content of the current node is then placed within the innermost tag of the parsed markup and that parsed markup replaces the content of the current node.
 
+CAVEATS
+=======
+
+This software is beta quality. It has been ported from a mature code base and survived many uses, but it has still only had a small number of bugs reported and fixed. It has a large test suite, but much of that has been ported from the Perl 5 module and is not necessarily specific to the kinds of bugs this port has. There has also been very little done to optimize the code or even to check to make sure it performs well in how it utilizes CPU and memory.
+
+As of the v0.5.0, this project is committed to the following signals regarding changes to this software in the future:
+
+  * The major version number ("1" in "1.2.3") will be incremented whenever a documented feature changes in a way that is not backwards compatible.
+
+  * The minor version number ("2" in "1.2.3") will be incremented whenever new features or added or any backwards compatible change is made to an undocumented feature or some other significant change is made to the project.
+
+  * The patch number ("3" in "1.2.3") will be incremented whenever any other change is made (e.g., documentation, testing, minor bug fixes, etc.)
+
+Semantic versioning is not a perfect system as it is not always crystal clear what distinguishes "bug fix" from "new feature" or "backwards compatible change" until after the fact, but I will try to do my best.
+
+Any change thought to break backwards compatibility will be tagged with "BREAKING CHANGE" in `Changes`.
+
 AUTHOR AND COPYRIGHT
 ====================
 
@@ -753,3 +783,4 @@ Copyright 2016 Andrew Sterling Hanenkamp for the port to Perl 6.
 This is free software, licensed under:
 
 The Artistic License 2.0 (GPL Compatible)
+
