@@ -1,5 +1,6 @@
-unit module DOM::Tiny::Entities;
 use v6;
+
+unit module DOM::Tiny::Entities;
 
 # To generate a new HTML entity table run this command
 # perl examples/entities.pl

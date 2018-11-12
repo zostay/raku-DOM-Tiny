@@ -1,5 +1,6 @@
-unit module DOM::Tiny::HTML;
 use v6;
+
+unit module DOM::Tiny::HTML;
 
 use DOM::Tiny::Entities;
 

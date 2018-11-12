@@ -1,5 +1,6 @@
-unit class DOM::Tiny::CSS;
 use v6;
+
+unit class DOM::Tiny::CSS;
 
 use DOM::Tiny::HTML;
 
