@@ -41,9 +41,9 @@ grammar XMLTokenizer {
     }
     token attr-key { <-[ < > = \s / ]>+ }
     token attr-value {
-        | [ '"' $<raw-value> = [ .*? ] '"'  ]
-        | [ "'" $<raw-value> = [ .*? ] "'" ]
-        | [ $<raw-value> = <-[ > \s ]>* ]
+        || [ '"' $<raw-value> = [ .*? ] '"'  ]
+        || [ "'" $<raw-value> = [ .*? ] "'" ]
+        || [ $<raw-value> = <-[ > \s ]>* ]
     }
     token attr-broken {
         [
