@@ -1,4 +1,4 @@
-{{$NEXT}}
+v0.5.2	2019-01-05
 
     * Performance Improvement #14: Special thanks to @apapas for speading up
       attribute parsing.
