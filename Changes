@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+    * Performance Improvement #14: Special thanks to @apapas for speading up
+      attribute parsing.
+
 v0.5.1	2018-11-11
 
     * Fix location of use v6 for v6.d. :(
