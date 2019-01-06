@@ -1,38 +1,38 @@
 {
-  "auth": "github:zostay",
+  "source-url": "git://github.com/zostay/p6-DOM-Tiny.git",
+  "depends": [
+    
+  ],
   "test-depends": [
     "Test",
     "Test::META"
   ],
-  "description": "Very small, self-sufficient DOM parser manipulator",
-  "depends": [
-    
-  ],
-  "meta-version": "0",
-  "source-url": "git://github.com/zostay/p6-DOM-Tiny.git",
+  "auth": "github:zostay",
   "build-depends": [
     
   ],
-  "provides": {
-    "DOM::Tiny::Entities": "lib/DOM/Tiny/Entities.pm6",
-    "DOM::Tiny": "lib/DOM/Tiny.pm6",
-    "DOM::Tiny::CSS": "lib/DOM/Tiny/CSS.pm6",
-    "DOM::Tiny::HTML": "lib/DOM/Tiny/HTML.pm6"
-  },
-  "perl": "6.c",
+  "version": "0.5.2",
+  "meta-version": "0",
   "license": "Artistic-2.0",
-  "authors": [
-    "Sterling Hanenkamp <hanenkamp@cpan.org>"
-  ],
-  "name": "DOM::Tiny",
-  "tags": [
-    
-  ],
+  "description": "Very small, self-sufficient DOM parser manipulator",
+  "perl": "6.c",
   "support": {
     "source": "git://github.com/zostay/p6-DOM-Tiny.git"
+  },
+  "provides": {
+    "DOM::Tiny::Entities": "lib/DOM/Tiny/Entities.pm6",
+    "DOM::Tiny::HTML": "lib/DOM/Tiny/HTML.pm6",
+    "DOM::Tiny::CSS": "lib/DOM/Tiny/CSS.pm6",
+    "DOM::Tiny": "lib/DOM/Tiny.pm6"
   },
   "resources": [
     
   ],
-  "version": "0.5.1"
+  "authors": [
+    "Sterling Hanenkamp <hanenkamp@cpan.org>"
+  ],
+  "tags": [
+    
+  ],
+  "name": "DOM::Tiny"
 }
