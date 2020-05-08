@@ -3,6 +3,11 @@ NAME
 
 DOM::Tiny - A lightweight, self-contained DOM parser/manipulator
 
+INSTALL
+====
+
+zef install DOM::Tiny
+
 SYNOPSIS
 ========
 
