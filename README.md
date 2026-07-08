@@ -1,3 +1,10 @@
+> ## ⚠️ ARCHIVED PROJECT
+>
+> **This project has been archived as of July 8, 2026.** I am no longer an
+> active part of the Raku community and will not be maintaining this project
+> going forward. The code remains available for reference and forking, but
+> issues and pull requests will no longer be reviewed or merged.
+
 NAME
 ====
 
