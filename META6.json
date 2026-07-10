@@ -32,7 +32,9 @@
     "Sterling Hanenkamp <hanenkamp@cpan.org>"
   ],
   "tags": [
-    
+    "HTML",
+    "PARSE",
+    "PARSER"
   ],
   "name": "DOM::Tiny"
 }
